@@ -34,14 +34,14 @@ const DESTINATIONS = [
 
 export default function Destinations() {
   return (
-    <section id="destinations" className="py-24 relative overflow-hidden">
+    <section id="destinations" className="py-24 relative overflow-hidden bg-zinc-50 dark:bg-bg-dark transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-6">
           <div className="space-y-4">
             <h2 className="text-xs font-semibold tracking-[0.25em] text-gold uppercase">Featured Destinations</h2>
-            <p className="text-3xl md:text-4xl font-serif font-bold text-white">
+            <p className="text-3xl md:text-4xl font-serif font-bold text-zinc-900 dark:text-white">
               Explore incredible South India.
             </p>
           </div>
@@ -59,7 +59,7 @@ export default function Destinations() {
           {DESTINATIONS.map((dest) => (
             <div 
               key={dest.name}
-              className="group relative h-96 rounded-2xl overflow-hidden shadow-2xl border border-white/5 hover:border-gold/30 hover:scale-[1.01] transition-all duration-300"
+              className="group relative h-96 rounded-2xl overflow-hidden shadow-md dark:shadow-2xl border border-zinc-200 dark:border-white/5 hover:border-gold/30 hover:scale-[1.01] transition-all duration-300"
             >
               {/* Img background */}
               <img 
@@ -69,8 +69,8 @@ export default function Destinations() {
                 loading="lazy"
               />
               
-              {/* Ambient dark gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+              {/* Ambient dark gradient (kept dark for overlay readability) */}
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent"></div>
 
               {/* Content Overlay */}
               <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col justify-end space-y-3">
@@ -79,10 +79,10 @@ export default function Destinations() {
                 </span>
                 <div>
                   <h3 className="text-xl font-serif font-bold text-white tracking-wide">{dest.name}</h3>
-                  <p className="text-xs text-zinc-400">{dest.duration}</p>
+                  <p className="text-xs text-zinc-300">{dest.duration}</p>
                 </div>
                 <div className="flex items-center justify-between border-t border-white/10 pt-3 mt-1">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Starts from</span>
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Starts from</span>
                   <span className="text-sm font-serif font-bold text-gold">₹{dest.price}</span>
                 </div>
               </div>

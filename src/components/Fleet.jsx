@@ -129,16 +129,16 @@ export default function Fleet({ onBookNowClick }) {
   const filteredVehicles = VEHICLES.filter((v) => v.category === activeTab);
 
   return (
-    <section id="fleet" className="py-24 bg-zinc-950/60 relative">
+    <section id="fleet" className="py-24 bg-zinc-100/50 dark:bg-zinc-950/60 relative transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Header */}
         <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
           <h2 className="text-xs font-semibold tracking-[0.25em] text-gold uppercase">Our Premium Fleet</h2>
-          <p className="text-3xl md:text-4xl font-serif font-bold text-white">
+          <p className="text-3xl md:text-4xl font-serif font-bold text-zinc-900 dark:text-white">
             A luxury vehicle for every mile ahead.
           </p>
-          <p className="text-sm text-zinc-400 font-light">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light">
             From efficient hatchbacks for city visits to luxury sedans and full-scale mini buses for group travel — every vehicle is deeply sanitised, GPS-enabled, and paired with a verified chauffeur.
           </p>
         </div>
@@ -152,7 +152,7 @@ export default function Fleet({ onBookNowClick }) {
               className={`px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === category 
                   ? "bg-gold text-zinc-950 shadow-md shadow-gold/10 font-bold" 
-                  : "glass text-zinc-400 hover:text-white"
+                  : "bg-white dark:bg-white/5 border border-zinc-200 dark:border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
               }`}
             >
               {category}
@@ -165,7 +165,7 @@ export default function Fleet({ onBookNowClick }) {
           {filteredVehicles.map((vehicle) => (
             <div 
               key={vehicle.id} 
-              className="group overflow-hidden rounded-2xl glass-card border border-white/5 hover:border-gold/30 hover:scale-[1.01] flex flex-col h-full bg-zinc-900/30"
+              className="group overflow-hidden rounded-2xl bg-white dark:bg-zinc-900/30 border border-zinc-200 dark:border-white/5 hover:border-gold/30 dark:hover:border-gold/30 hover:scale-[1.01] flex flex-col h-full shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300"
             >
               {/* Image Showcase */}
               <div className="h-52 overflow-hidden relative bg-zinc-950">
@@ -175,25 +175,25 @@ export default function Fleet({ onBookNowClick }) {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                   loading="lazy"
                 />
-                <div className="absolute top-4 right-4 bg-zinc-950/80 backdrop-blur-md border border-gold/40 px-3.5 py-1.5 rounded-full">
+                <div className="absolute top-4 right-4 bg-white/90 dark:bg-zinc-950/80 backdrop-blur-md border border-gold/40 px-3.5 py-1.5 rounded-full shadow-sm">
                   <span className="text-sm font-serif font-bold text-gold">₹{vehicle.rate}</span>
-                  <span className="text-[10px] text-zinc-400">/km</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">/km</span>
                 </div>
               </div>
 
               {/* Body details */}
               <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold font-serif text-white tracking-wide group-hover:text-gold transition-colors">
+                  <h3 className="text-lg font-bold font-serif text-zinc-900 dark:text-white tracking-wide group-hover:text-gold transition-colors">
                     {vehicle.name}
                   </h3>
-                  <p className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mt-1">
                     {vehicle.category}
                   </p>
                 </div>
 
                 {/* Vehicle Specs Icons */}
-                <div className="grid grid-cols-3 gap-4 border-y border-white/5 py-4 text-xs text-zinc-400">
+                <div className="grid grid-cols-3 gap-4 border-y border-zinc-200 dark:border-white/5 py-4 text-xs text-zinc-600 dark:text-zinc-400">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gold/80" />
                     <span>{vehicle.seats} Seats</span>
@@ -211,7 +211,7 @@ export default function Fleet({ onBookNowClick }) {
                 {/* Actions */}
                 <button
                   onClick={() => onBookNowClick(vehicle.name, "vehicle")}
-                  className="w-full py-3 bg-white/5 hover:bg-gold hover:text-zinc-950 text-white text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
+                  className="w-full py-3 bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 dark:hover:text-zinc-950 text-zinc-800 dark:text-white text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
                 >
                   Book Now
                 </button>

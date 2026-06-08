@@ -32,9 +32,10 @@ export default function Reviews() {
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
 
   return (
-    <section className="py-24 relative overflow-hidden bg-zinc-950">
+    <section className="py-24 relative overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-6">
         
+        {/* Header */}
         <div className="text-center space-y-6">
           <div className="inline-flex items-center gap-1 bg-gold/10 border border-gold/30 px-4 py-1.5 rounded-full">
             <span className="text-[10px] font-bold tracking-widest text-gold uppercase">Google Reviews</span>
@@ -44,26 +45,26 @@ export default function Reviews() {
                 <Star key={i} className="w-2.5 h-2.5 fill-current" />
               ))}
             </div>
-            <span className="text-[10px] font-bold text-white ml-1">4.9 ★ Rating</span>
+            <span className="text-[10px] font-bold text-zinc-700 dark:text-white ml-1">4.9 ★ Rating</span>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-zinc-900 dark:text-white">
             Heard from our travellers.
           </h2>
         </div>
 
         {/* Sliding reviews wrapper */}
-        <div className="mt-12 relative overflow-hidden p-8 rounded-2xl glass border border-white/5">
+        <div className="mt-12 relative overflow-hidden p-8 rounded-2xl bg-white dark:bg-zinc-900/30 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">
           <div className="space-y-6 text-center">
-            <p className="text-base md:text-lg italic font-light text-zinc-300 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base md:text-lg italic font-light text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-2xl mx-auto">
               "{REVIEWS[activeReviewIndex].text}"
             </p>
             
             <div>
-              <h4 className="text-sm font-bold text-white tracking-wide">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white tracking-wide">
                 {REVIEWS[activeReviewIndex].name}
               </h4>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
                 {REVIEWS[activeReviewIndex].role}
               </p>
             </div>
@@ -76,7 +77,7 @@ export default function Reviews() {
                 key={idx}
                 onClick={() => setActiveReviewIndex(idx)}
                 className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                  activeReviewIndex === idx ? "bg-gold scale-110" : "bg-white/10 hover:bg-white/30"
+                  activeReviewIndex === idx ? "bg-gold scale-110" : "bg-zinc-200 dark:bg-white/10 hover:bg-zinc-300 dark:hover:bg-white/30"
                 }`}
                 aria-label={`Go to review slide ${idx + 1}`}
               />

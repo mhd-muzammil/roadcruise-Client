@@ -27,13 +27,13 @@ const STORIES = [
 
 export default function Stories() {
   return (
-    <section id="stories" className="py-24 relative">
+    <section id="stories" className="py-24 bg-zinc-50 dark:bg-bg-dark relative transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Header */}
         <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
           <h2 className="text-xs font-semibold tracking-[0.25em] text-gold uppercase">Travel Stories</h2>
-          <p className="text-3xl md:text-4xl font-serif font-bold text-white">
+          <p className="text-3xl md:text-4xl font-serif font-bold text-zinc-900 dark:text-white">
             Memories from the open road.
           </p>
         </div>
@@ -43,11 +43,11 @@ export default function Stories() {
           {STORIES.map((story) => (
             <div 
               key={story.id}
-              className="group p-8 rounded-2xl glass-card border border-white/5 hover:border-gold/30 bg-zinc-900/30 flex flex-col justify-between h-full"
+              className="group p-8 rounded-2xl bg-white dark:bg-zinc-900/30 border border-zinc-200 dark:border-white/5 hover:border-gold/30 dark:hover:border-gold/30 flex flex-col justify-between h-full shadow-sm dark:shadow-none transition-all duration-300"
             >
               <div className="space-y-6">
                 {/* Category badges */}
-                <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
+                <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-semibold">
                   <span className="text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
                     {story.tag}
                   </span>
@@ -55,18 +55,18 @@ export default function Stories() {
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-lg font-serif font-bold text-white tracking-wide group-hover:text-gold transition-colors">
+                  <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white tracking-wide group-hover:text-gold transition-colors">
                     {story.title}
                   </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed font-light">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-light">
                     {story.desc}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-white/5 mt-8 flex items-center justify-between">
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Story by Customer</span>
-                <ThumbsUp className="w-4 h-4 text-zinc-500 group-hover:text-gold transition-colors" />
+              <div className="pt-6 border-t border-zinc-200 dark:border-white/5 mt-8 flex items-center justify-between">
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Story by Customer</span>
+                <ThumbsUp className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:text-gold transition-colors" />
               </div>
             </div>
           ))}

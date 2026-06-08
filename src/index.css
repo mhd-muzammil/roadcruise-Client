@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-gold: #D4AF37;
   --color-gold-hover: #F3E5AB;

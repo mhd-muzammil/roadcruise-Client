@@ -59,22 +59,22 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl glass-card bg-zinc-950/90 border border-gold/30 shadow-2xl shadow-gold/5 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 dark:bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-zinc-950/90 border border-zinc-200 dark:border-gold/30 shadow-2xl shadow-gold/5 flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div className="p-6 border-b border-zinc-150 dark:border-white/5 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold font-serif text-white tracking-wide">
+            <h3 className="text-xl font-bold font-serif text-zinc-900 dark:text-white tracking-wide">
               {isSubmitted ? "Booking Confirmed" : "Book Your Journey"}
             </h3>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
               {selectedItem ? `Selected: ${selectedItem.name}` : "Premium Travel Service"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-gold hover:bg-white/5 rounded-full transition-all"
+            className="p-2 text-zinc-400 hover:text-gold hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full transition-all"
             aria-label="Close booking modal"
           >
             <X className="w-5 h-5" />
@@ -88,17 +88,17 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
               <div className="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center border border-gold/30 animate-pulse">
                 <CheckCircle className="w-10 h-10 text-gold" />
               </div>
-              <h4 className="text-2xl font-serif text-white">Request Received!</h4>
-              <p className="text-sm text-zinc-400 max-w-sm leading-relaxed">
-                Thank you, <span className="text-white font-medium">{formData.name}</span>. 
+              <h4 className="text-2xl font-serif text-zinc-900 dark:text-white">Request Received!</h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-sm leading-relaxed">
+                Thank you, <span className="text-zinc-900 dark:text-white font-medium">{formData.name}</span>. 
                 Our luxury travel concierge has received your request for <strong>{selectedItem?.name}</strong>.
               </p>
-              <div className="w-full bg-white/5 border border-white/5 rounded-xl p-4 text-left text-xs text-zinc-400 space-y-2 max-w-md">
-                <div><span className="font-semibold text-zinc-300">Date:</span> {formData.date}</div>
-                <div><span className="font-semibold text-zinc-300">Phone:</span> {formData.phone}</div>
-                <div><span className="font-semibold text-zinc-300">Service:</span> {formData.tripType}</div>
+              <div className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/5 rounded-xl p-4 text-left text-xs text-zinc-600 dark:text-zinc-400 space-y-2 max-w-md">
+                <div><span className="font-semibold text-zinc-700 dark:text-zinc-300">Date:</span> {formData.date}</div>
+                <div><span className="font-semibold text-zinc-700 dark:text-zinc-300">Phone:</span> {formData.phone}</div>
+                <div><span className="font-semibold text-zinc-700 dark:text-zinc-300">Service:</span> {formData.tripType}</div>
               </div>
-              <p className="text-xs text-gold/80 italic animate-bounce mt-4">
+              <p className="text-xs text-gold/85 italic animate-bounce mt-4 font-semibold">
                 We will contact you within 15 minutes to confirm the booking!
               </p>
               <button
@@ -112,11 +112,11 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-2">
                   Full Name
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
                     <User className="w-4 h-4" />
                   </span>
                   <input
@@ -125,9 +125,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter your full name"
-                    className={`w-full bg-white/5 border ${
-                      errors.name ? "border-red-500" : "border-white/10"
-                    } focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 transition-all`}
+                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
+                      errors.name ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`}
                   />
                 </div>
                 {errors.name && (
@@ -137,11 +137,11 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
 
               {/* Phone Number */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
                     <Phone className="w-4 h-4" />
                   </span>
                   <input
@@ -150,9 +150,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="e.g. +91 98765 43210"
-                    className={`w-full bg-white/5 border ${
-                      errors.phone ? "border-red-500" : "border-white/10"
-                    } focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 transition-all`}
+                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
+                      errors.phone ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`}
                   />
                 </div>
                 {errors.phone && (
@@ -162,11 +162,11 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
 
               {/* Preferred Date */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-2">
                   Preferred Travel Date
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
                     <Calendar className="w-4 h-4" />
                   </span>
                   <input
@@ -174,9 +174,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
                     name="date"
                     value={formData.date}
                     onChange={handleInputChange}
-                    className={`w-full bg-white/5 border ${
-                      errors.date ? "border-red-500" : "border-white/10"
-                    } focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white [color-scheme:dark] transition-all`}
+                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
+                      errors.date ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] transition-all`}
                   />
                 </div>
                 {errors.date && (
@@ -186,18 +186,18 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
 
               {/* Service/Trip Type */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-2">
                   Trip Service Type
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
                     <Compass className="w-4 h-4" />
                   </span>
                   <select
                     name="tripType"
                     value={formData.tripType}
                     onChange={handleInputChange}
-                    className="w-full bg-zinc-900 border border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-white appearance-none cursor-pointer transition-all"
+                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer transition-all"
                   >
                     <option value="Round-trip">Round-trip Rental</option>
                     <option value="One-way">One-way Drop</option>
@@ -208,7 +208,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
 
               {/* Special Notes */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-2">
                   Special Requirements (Optional)
                 </label>
                 <textarea
@@ -217,7 +217,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem }) {
                   onChange={handleInputChange}
                   rows="3"
                   placeholder="e.g. child seat, specific driver request, language preferences..."
-                  className="w-full bg-white/5 border border-white/10 focus:border-gold/60 focus:outline-none rounded-lg p-3 text-sm text-white placeholder-zinc-500 resize-none transition-all"
+                  className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg p-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 resize-none transition-all"
                 ></textarea>
               </div>
 
