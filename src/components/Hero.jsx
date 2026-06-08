@@ -5,13 +5,27 @@ export default function Hero({ onBookNowClick }) {
   return (
     <section id="home" className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/60 via-zinc-50/90 to-white dark:from-zinc-900/40 dark:via-zinc-950/90 dark:to-zinc-950 z-0 transition-colors duration-300"></div>
-      <div 
-        className="absolute inset-0 z-0 opacity-[0.05] dark:opacity-15 bg-cover bg-center mix-blend-overlay transition-opacity duration-300"
-        style={{ backgroundImage: `url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1920')` }}
-      ></div>
+      <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/60 via-zinc-50/90 to-white dark:from-zinc-900/40 dark:via-zinc-950/90 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
+      
+      {/* Background Video with Poster Fallback */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1920"
+          className="w-full h-full object-cover opacity-10 dark:opacity-100 transition-opacity duration-500"
+        >
+          <source 
+            src="https://www.pexels.com/download/video/16268996/" 
+            type="video/mp4" 
+          />
+          Your browser does not support the video tag.
+        </video>
+      </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center space-y-8 mt-8">
+      <div className="relative z-20 max-w-5xl mx-auto px-6 text-center space-y-8 mt-8">
         
         {/* Govt Recognition Badge */}
         <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/30 rounded-full px-4 py-1.5 animate-bounce-slow">
