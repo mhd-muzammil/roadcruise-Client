@@ -1,5 +1,6 @@
 import React from "react";
 import { Compass, Phone, Mail, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
@@ -26,11 +27,11 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Explore</h4>
           <ul className="space-y-2">
-            <li><a href="#home" className="hover:text-gold transition-colors">Home / Booking</a></li>
-            <li><a href="#fleet" className="hover:text-gold transition-colors">Premium Fleet</a></li>
-            <li><a href="#destinations" className="hover:text-gold transition-colors">Destinations</a></li>
-            <li><a href="#packages" className="hover:text-gold transition-colors">Featured Packages</a></li>
-            <li><a href="#stories" className="hover:text-gold transition-colors">Travel Stories</a></li>
+            <li><Link to="/" className="hover:text-gold transition-colors">Home</Link></li>
+            <li><Link to="/about" className="hover:text-gold transition-colors">About Us</Link></li>
+            <li><Link to="/vehicles" className="hover:text-gold transition-colors">Premium Vehicles</Link></li>
+            <li><Link to="/tours-travels" className="hover:text-gold transition-colors">Tours & Travels</Link></li>
+            <li><Link to="/contact" className="hover:text-gold transition-colors">Contact Us</Link></li>
           </ul>
         </div>
 
@@ -38,11 +39,11 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Company</h4>
           <ul className="space-y-2">
-            <li><a href="#about" className="hover:text-gold transition-colors">About Us</a></li>
-            <li><a href="#home" className="hover:text-gold transition-colors">Terms of Service</a></li>
-            <li><a href="#home" className="hover:text-gold transition-colors">Privacy Policy</a></li>
-            <li><a href="#home" className="hover:text-gold transition-colors">Refund Policy</a></li>
-            <li><a href="#home" className="hover:text-gold transition-colors">FAQs</a></li>
+            <li><Link to="/about" className="hover:text-gold transition-colors">About Us</Link></li>
+            <li><Link to="/" className="hover:text-gold transition-colors">Terms of Service</Link></li>
+            <li><Link to="/" className="hover:text-gold transition-colors">Privacy Policy</Link></li>
+            <li><Link to="/" className="hover:text-gold transition-colors">Refund Policy</Link></li>
+            <li><Link to="/" className="hover:text-gold transition-colors">FAQs</Link></li>
           </ul>
         </div>
 

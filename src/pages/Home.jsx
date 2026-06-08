@@ -1,3 +1,14 @@
-export default function Home() {
-  return <div className="p-10 text-3xl font-bold">Home Page</div>;
+import React from "react";
+import Hero from "../components/Hero";
+import Reviews from "../components/Reviews";
+import Stories from "../components/Stories";
+
+export default function Home({ onBookNowClick }) {
+  return (
+    <>
+      <Hero onBookNowClick={onBookNowClick} />
+      <Stories />
+      <Reviews />
+    </>
+  );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Compass, Phone, Menu, X, Sun, Moon } from "lucide-react";
+import { Link, NavLink } from "react-router-dom";
 
 export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
   const [scrolled, setScrolled] = useState(false);
@@ -26,7 +27,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <a href="#home" className="flex items-center gap-2 group">
+        <Link to="/" className="flex items-center gap-2 group">
           <div className="w-10 h-10 rounded-full border border-gold/40 flex items-center justify-center bg-gold/5 group-hover:border-gold transition-all duration-300">
             <Compass className="w-5 h-5 text-gold group-hover:rotate-45 transition-transform duration-500" />
           </div>
@@ -38,15 +39,15 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
               Premium Journeys
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
-          <a href="#fleet" className="text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors">Fleet</a>
-          <a href="#destinations" className="text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors">Destinations</a>
-          <a href="#packages" className="text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors">Packages</a>
-          <a href="#stories" className="text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors">Stories</a>
-          <a href="#about" className="text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors">About</a>
+        <nav className="hidden md:flex items-center gap-8">
+          <NavLink to="/" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`} end>Home</NavLink>
+          <NavLink to="/about" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>About</NavLink>
+          <NavLink to="/vehicles" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Vehicles</NavLink>
+          <NavLink to="/tours-travels" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Tours & Travels</NavLink>
+          <NavLink to="/contact" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Contact</NavLink>
         </nav>
 
         {/* Action controls */}
@@ -100,41 +101,42 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-x-0 top-[73px] bg-white/95 dark:bg-zinc-950/95 border-b border-zinc-200 dark:border-white/5 backdrop-blur-xl py-6 px-6 animate-fade-in flex flex-col gap-5 shadow-2xl">
-          <a 
-            href="#fleet" 
+          <NavLink 
+            to="/" 
             onClick={() => setMobileMenuOpen(false)}
-            className="text-lg font-medium text-zinc-700 dark:text-zinc-300 hover:text-gold transition-colors"
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+            end
           >
-            Fleet
-          </a>
-          <a 
-            href="#destinations" 
+            Home
+          </NavLink>
+          <NavLink 
+            to="/about" 
             onClick={() => setMobileMenuOpen(false)}
-            className="text-lg font-medium text-zinc-700 dark:text-zinc-300 hover:text-gold transition-colors"
-          >
-            Destinations
-          </a>
-          <a 
-            href="#packages" 
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-lg font-medium text-zinc-700 dark:text-zinc-300 hover:text-gold transition-colors"
-          >
-            Packages
-          </a>
-          <a 
-            href="#stories" 
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-lg font-medium text-zinc-700 dark:text-zinc-300 hover:text-gold transition-colors"
-          >
-            Stories
-          </a>
-          <a 
-            href="#about" 
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-lg font-medium text-zinc-700 dark:text-zinc-300 hover:text-gold transition-colors"
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
           >
             About
-          </a>
+          </NavLink>
+          <NavLink 
+            to="/vehicles" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+          >
+            Vehicles
+          </NavLink>
+          <NavLink 
+            to="/tours-travels" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+          >
+            Tours & Travels
+          </NavLink>
+          <NavLink 
+            to="/contact" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+          >
+            Contact
+          </NavLink>
           <div className="h-[1px] bg-zinc-200 dark:bg-white/5 my-2"></div>
           <div className="flex items-center justify-between">
             <a 

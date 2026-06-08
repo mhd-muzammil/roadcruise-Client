@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import Fleet from "./components/Fleet";
-import Destinations from "./components/Destinations";
-import Packages from "./components/Packages";
-import Stories from "./components/Stories";
-import About from "./components/About";
-import Reviews from "./components/Reviews";
 import Footer from "./components/Footer";
 import BookingModal from "./components/BookingModal";
+import ScrollToTop from "./components/common/ScrollToTop";
+
+// Page Imports
+import Home from "./pages/Home";
+import About from "./pages/About";
+import ToursTravels from "./pages/ToursTravels";
+import Contact from "./pages/Contact";
+import Fleet from "./pages/Fleet";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -34,47 +36,37 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-bg-dark text-zinc-900 dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden transition-colors duration-300">
-      {/* Sticky Luxury Navbar */}
-      <Navbar 
-        onBookNowClick={openBooking} 
-        isDarkMode={isDarkMode} 
-        onThemeToggle={toggleTheme} 
-      />
+    <Router>
+      <ScrollToTop />
+      <div className="min-h-screen bg-zinc-50 dark:bg-bg-dark text-zinc-900 dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden transition-colors duration-300">
+        {/* Sticky Luxury Navbar */}
+        <Navbar 
+          onBookNowClick={openBooking} 
+          isDarkMode={isDarkMode} 
+          onThemeToggle={toggleTheme} 
+        />
 
-      {/* Hero Section */}
-      <Hero onBookNowClick={openBooking} />
+        <Routes>
+          <Route path="/" element={<Home onBookNowClick={openBooking} />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/vehicles" element={<Fleet onBookNowClick={openBooking} />} />
+          <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
 
-      {/* Fleet Section */}
-      <Fleet onBookNowClick={openBooking} />
+        {/* Footer Section */}
+        <Footer />
 
-      {/* Destinations Section */}
-      <Destinations />
-
-      {/* Packages Section */}
-      <Packages onBookNowClick={openBooking} />
-
-      {/* Stories Section */}
-      <Stories />
-
-      {/* About Section */}
-      <About />
-
-      {/* Reviews Section */}
-      <Reviews />
-
-      {/* Footer Section */}
-      <Footer />
-
-      {/* Luxury Booking Dialog Modal */}
-      <BookingModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedItem(null);
-        }}
-        selectedItem={selectedItem}
-      />
-    </div>
+        {/* Luxury Booking Dialog Modal */}
+        <BookingModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedItem(null);
+          }}
+          selectedItem={selectedItem}
+        />
+      </div>
+    </Router>
   );
 }

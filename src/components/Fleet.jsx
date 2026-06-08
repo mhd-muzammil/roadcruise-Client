@@ -1,132 +1,183 @@
 import React, { useState } from "react";
-import { Users, Clock, Car } from "lucide-react";
+import { Users, Shield, Info } from "lucide-react";
 
 const VEHICLE_CATEGORIES = [
-  "SUVs",
+  "All",
   "Sedans",
-  "Hatchbacks",
-  "Luxury Cars",
+  "SUVs",
   "Tempo Travellers",
   "Mini Buses"
 ];
 
 const VEHICLES = [
   {
-    id: "innova",
-    name: "Toyota Innova Crysta",
+    id: "sedan",
+    name: "Sedan (Dzire, Aura, Amaze)",
+    category: "Sedans",
+    seats: "4+1",
+    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 14,
+    driverBata: 500,
+    localPricing: {
+      fourHours: 1250,
+      eightHours: 2300,
+      twelveHours: 3200,
+      extraKm: 20,
+      extraHr: 220
+    }
+  },
+  {
+    id: "suv-any",
+    name: "Any SUV (Ertiga, Marazzo, Kia Carens)",
     category: "SUVs",
-    rate: 18,
-    seats: 7,
-    hours: 24,
-    minDistance: 300,
-    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=600"
+    seats: "6+1",
+    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 18,
+    driverBata: 500,
+    localPricing: {
+      fourHours: 1500,
+      eightHours: 3300,
+      twelveHours: 4700,
+      extraKm: 30,
+      extraHr: 330
+    }
   },
   {
-    id: "fortuner",
-    name: "Toyota Fortuner 4x4",
+    id: "kia-carens",
+    name: "Kia Carens",
     category: "SUVs",
-    rate: 26,
-    seats: 7,
-    hours: 24,
-    minDistance: 300,
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600"
+    seats: "6+1",
+    image: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 20,
+    driverBata: 600,
+    localPricing: {
+      fourHours: 1600,
+      eightHours: 3500,
+      twelveHours: 4900,
+      extraKm: 33,
+      extraHr: 350
+    }
   },
   {
-    id: "eclass",
-    name: "Mercedes-Benz E-Class",
-    category: "Luxury Cars",
-    rate: 32,
-    seats: 4,
-    hours: 12,
-    minDistance: 250,
-    image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=80&w=600"
+    id: "innova-crysta",
+    name: "Innova Crysta",
+    category: "SUVs",
+    seats: "7+1",
+    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 22,
+    driverBata: 600,
+    localPricing: {
+      fourHours: 2000,
+      eightHours: 4000,
+      twelveHours: 5900,
+      extraKm: 33,
+      extraHr: 450
+    }
   },
   {
-    id: "sclass",
-    name: "Mercedes-Benz S-Class",
-    category: "Luxury Cars",
-    rate: 65,
-    seats: 4,
-    hours: 12,
-    minDistance: 200,
-    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600"
+    id: "innova-hycross",
+    name: "Innova Hycross",
+    category: "SUVs",
+    seats: "6+1 OR 7+1",
+    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 24,
+    driverBata: 700,
+    localPricing: {
+      fourHours: 2200,
+      eightHours: 4400,
+      twelveHours: 6500,
+      extraKm: 35,
+      extraHr: 500
+    }
   },
   {
     id: "urbania",
-    name: "Force Urbania Premium",
+    name: "Urbania 12+1",
     category: "Tempo Travellers",
-    rate: 26,
-    seats: 13,
-    hours: 24,
-    minDistance: 300,
-    image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=600"
+    seats: "12+1",
+    image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 35,
+    driverBata: 1000,
+    localPricing: {
+      fourHours: 5000,
+      eightHours: 10000,
+      twelveHours: 14000,
+      extraKm: 45,
+      extraHr: 1000
+    }
   },
   {
-    id: "traveller",
-    name: "Tempo Traveller Executive",
+    id: "tt-12",
+    name: "Tempo Traveller 12 A/C",
     category: "Tempo Travellers",
-    rate: 22,
-    seats: 12,
-    hours: 24,
-    minDistance: 300,
-    image: "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600"
+    seats: "12+1",
+    image: "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 24,
+    driverBata: 800,
+    localPricing: {
+      fourHours: 3000,
+      eightHours: 6000,
+      twelveHours: 8500,
+      extraKm: 35,
+      extraHr: 600
+    }
   },
   {
-    id: "swift",
-    name: "Maruti Suzuki Swift",
-    category: "Hatchbacks",
-    rate: 12,
-    seats: 5,
-    hours: 24,
-    minDistance: 200,
-    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600"
+    id: "tt-18",
+    name: "Tempo Traveller 18 A/C",
+    category: "Tempo Travellers",
+    seats: "18+1",
+    image: "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 26,
+    driverBata: 900,
+    localPricing: {
+      fourHours: 3500,
+      eightHours: 7000,
+      twelveHours: 9900,
+      extraKm: 35,
+      extraHr: 700
+    }
   },
   {
-    id: "i20",
-    name: "Hyundai i20 Asta",
-    category: "Hatchbacks",
-    rate: 13,
-    seats: 5,
-    hours: 24,
-    minDistance: 200,
-    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: "city",
-    name: "Honda City i-VTEC",
-    category: "Sedans",
-    rate: 16,
-    seats: 5,
-    hours: 24,
-    minDistance: 250,
-    image: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: "ciaz",
-    name: "Maruti Suzuki Ciaz",
-    category: "Sedans",
-    rate: 15,
-    seats: 5,
-    hours: 24,
-    minDistance: 250,
-    image: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: "minibus",
-    name: "Premium Charter Mini Bus",
+    id: "minibus-21",
+    name: "Mini Bus 21 Seater",
     category: "Mini Buses",
-    rate: 38,
-    seats: 21,
-    hours: 24,
-    minDistance: 350,
-    image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600"
+    seats: "21+1",
+    image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 30,
+    driverBata: 1000,
+    localPricing: {
+      fourHours: 5000,
+      eightHours: 9000,
+      twelveHours: 12200,
+      extraKm: 40,
+      extraHr: 800
+    }
+  },
+  {
+    id: "minibus-32",
+    name: "Mini Bus 32 Seater",
+    category: "Mini Buses",
+    seats: "32+1",
+    image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600",
+    outstationRate: 50,
+    driverBata: 1200,
+    localPricing: {
+      fourHours: 8000,
+      eightHours: 12000,
+      twelveHours: 18000,
+      extraKm: 50,
+      extraHr: 1500
+    }
   }
 ];
 
 export default function Fleet({ onBookNowClick }) {
-  const [activeTab, setActiveTab] = useState("SUVs");
+  const [activeTab, setActiveTab] = useState("All");
 
-  const filteredVehicles = VEHICLES.filter((v) => v.category === activeTab);
+  const filteredVehicles = activeTab === "All" 
+    ? VEHICLES 
+    : VEHICLES.filter((v) => v.category === activeTab);
 
   return (
     <section id="fleet" className="py-24 bg-zinc-100/50 dark:bg-zinc-950/60 relative transition-colors duration-300">
@@ -139,7 +190,7 @@ export default function Fleet({ onBookNowClick }) {
             A luxury vehicle for every mile ahead.
           </p>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light">
-            From efficient hatchbacks for city visits to luxury sedans and full-scale mini buses for group travel — every vehicle is deeply sanitised, GPS-enabled, and paired with a verified chauffeur.
+            Review our verified, deep-cleaned, GPS-enabled fleet with detailed local package and outstation pricing structures.
           </p>
         </div>
 
@@ -175,36 +226,68 @@ export default function Fleet({ onBookNowClick }) {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                   loading="lazy"
                 />
+                
+                {/* Seating badge */}
+                <div className="absolute top-4 left-4 bg-zinc-950/80 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] uppercase font-bold text-white flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-gold" />
+                  <span>{vehicle.seats} seats</span>
+                </div>
+
                 <div className="absolute top-4 right-4 bg-white/90 dark:bg-zinc-950/80 backdrop-blur-md border border-gold/40 px-3.5 py-1.5 rounded-full shadow-sm">
-                  <span className="text-sm font-serif font-bold text-gold">₹{vehicle.rate}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Outstation: </span>
+                  <span className="text-sm font-serif font-bold text-gold">₹{vehicle.outstationRate}</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400">/km</span>
                 </div>
               </div>
 
               {/* Body details */}
               <div className="p-6 flex-1 flex flex-col justify-between space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold font-serif text-zinc-900 dark:text-white tracking-wide group-hover:text-gold transition-colors">
-                    {vehicle.name}
-                  </h3>
-                  <p className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mt-1">
-                    {vehicle.category}
-                  </p>
-                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold font-serif text-zinc-900 dark:text-white tracking-wide group-hover:text-gold transition-colors">
+                      {vehicle.name}
+                    </h3>
+                    <p className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mt-1">
+                      {vehicle.category}
+                    </p>
+                  </div>
 
-                {/* Vehicle Specs Icons */}
-                <div className="grid grid-cols-3 gap-4 border-y border-zinc-200 dark:border-white/5 py-4 text-xs text-zinc-600 dark:text-zinc-400">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gold/80" />
-                    <span>{vehicle.seats} Seats</span>
+                  {/* Outstation Rates & Bata */}
+                  <div className="bg-zinc-50 dark:bg-white/5 p-3.5 rounded-xl border border-zinc-200 dark:border-white/5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-500">Outstation Rate:</span>
+                      <span className="font-bold text-zinc-900 dark:text-white">₹{vehicle.outstationRate} / km</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-500">Driver Bata:</span>
+                      <span className="font-bold text-zinc-900 dark:text-white">₹{vehicle.driverBata} / day</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gold/80" />
-                    <span>{vehicle.hours} Hrs</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-gold/80" />
-                    <span>{vehicle.minDistance} km min</span>
+
+                  {/* Local Packages Grid */}
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-gold/80" />
+                      <span>Local Packages</span>
+                    </h4>
+                    <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                      <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-lg border border-zinc-200 dark:border-white/5">
+                        <span className="block text-zinc-400 mb-0.5">4h / 40km</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">₹{vehicle.localPricing.fourHours}</span>
+                      </div>
+                      <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-lg border border-zinc-200 dark:border-white/5">
+                        <span className="block text-zinc-400 mb-0.5">8h / 80km</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">₹{vehicle.localPricing.eightHours}</span>
+                      </div>
+                      <div className="p-2 bg-zinc-50 dark:bg-white/5 rounded-lg border border-zinc-200 dark:border-white/5">
+                        <span className="block text-zinc-400 mb-0.5">12h / 120km</span>
+                        <span className="font-bold text-zinc-900 dark:text-white">₹{vehicle.localPricing.twelveHours}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-zinc-500 px-1 pt-1.5 border-t border-zinc-100 dark:border-white/5 font-light">
+                      <span>Extra Km: ₹{vehicle.localPricing.extraKm}/km</span>
+                      <span>Extra Hr: ₹{vehicle.localPricing.extraHr}/hr</span>
+                    </div>
                   </div>
                 </div>
 
@@ -218,6 +301,20 @@ export default function Fleet({ onBookNowClick }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Exclusions Disclaimer Box */}
+        <div className="mt-16 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs text-zinc-600 dark:text-zinc-400 max-w-4xl mx-auto space-y-3">
+          <h4 className="font-bold text-gold uppercase tracking-wider text-center sm:text-left flex items-center gap-2">
+            <Info className="w-4 h-4 text-gold flex-shrink-0" />
+            <span>Tariff Exclusions & Guidelines</span>
+          </h4>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 list-disc list-inside">
+            <li>Excludes Toll Gate fees & Parking charges.</li>
+            <li>Excludes State Entry Tax & Permits.</li>
+            <li>Excludes Hill Station entry charges.</li>
+            <li>Night allowance of ₹200 to ₹500 applies for driving between 10:00 PM and 5:00 AM (varies per vehicle).</li>
+          </ul>
         </div>
 
       </div>
