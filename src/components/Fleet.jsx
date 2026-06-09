@@ -15,7 +15,8 @@ const VEHICLES = [
     name: "Sedan (Dzire, Aura, Amaze)",
     category: "Sedans",
     seats: "4+1",
-    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/8e/64/cc/8e64cc674cf764b5275adbb274d04698.jpg",
     outstationRate: 14,
     driverBata: 500,
     localPricing: {
@@ -23,15 +24,16 @@ const VEHICLES = [
       eightHours: 2300,
       twelveHours: 3200,
       extraKm: 20,
-      extraHr: 220
-    }
+      extraHr: 220,
+    },
   },
   {
     id: "suv-any",
     name: "Any SUV (Ertiga, Marazzo, Kia Carens)",
     category: "SUVs",
     seats: "6+1",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/ff/a4/7c/ffa47cd2acadeae55de83aaa4ac5e127.jpg",
     outstationRate: 18,
     driverBata: 500,
     localPricing: {
@@ -39,15 +41,16 @@ const VEHICLES = [
       eightHours: 3300,
       twelveHours: 4700,
       extraKm: 30,
-      extraHr: 330
-    }
+      extraHr: 330,
+    },
   },
   {
     id: "kia-carens",
     name: "Kia Carens",
     category: "SUVs",
     seats: "6+1",
-    image: "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/c7/1a/dd/c71add24f15c9afa2208057e15cb8872.jpg",
     outstationRate: 20,
     driverBata: 600,
     localPricing: {
@@ -55,15 +58,15 @@ const VEHICLES = [
       eightHours: 3500,
       twelveHours: 4900,
       extraKm: 33,
-      extraHr: 350
-    }
+      extraHr: 350,
+    },
   },
   {
     id: "innova-crysta",
     name: "Innova Crysta",
     category: "SUVs",
     seats: "7+1",
-    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=600",
+    image: "/public/inova crysta.jfif",
     outstationRate: 22,
     driverBata: 600,
     localPricing: {
@@ -71,15 +74,16 @@ const VEHICLES = [
       eightHours: 4000,
       twelveHours: 5900,
       extraKm: 33,
-      extraHr: 450
-    }
+      extraHr: 450,
+    },
   },
   {
     id: "innova-hycross",
     name: "Innova Hycross",
     category: "SUVs",
     seats: "6+1 OR 7+1",
-    image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/f7/ed/ca/f7edca42deefeeeea0db247dcf0f6669.jpg",
     outstationRate: 24,
     driverBata: 700,
     localPricing: {
@@ -87,15 +91,16 @@ const VEHICLES = [
       eightHours: 4400,
       twelveHours: 6500,
       extraKm: 35,
-      extraHr: 500
-    }
+      extraHr: 500,
+    },
   },
   {
     id: "urbania",
     name: "Urbania 12+1",
     category: "Tempo Travellers",
     seats: "12+1",
-    image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/bf/15/ec/bf15ec742c2440c20ad5100b11fa260c.jpg",
     outstationRate: 35,
     driverBata: 1000,
     localPricing: {
@@ -103,15 +108,16 @@ const VEHICLES = [
       eightHours: 10000,
       twelveHours: 14000,
       extraKm: 45,
-      extraHr: 1000
-    }
+      extraHr: 1000,
+    },
   },
   {
     id: "tt-12",
     name: "Tempo Traveller 12 A/C",
     category: "Tempo Travellers",
     seats: "12+1",
-    image: "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/30/1d/4a/301d4abe73a0f1696cb52aca1f9d971d.jpg",
     outstationRate: 24,
     driverBata: 800,
     localPricing: {
@@ -119,15 +125,16 @@ const VEHICLES = [
       eightHours: 6000,
       twelveHours: 8500,
       extraKm: 35,
-      extraHr: 600
-    }
+      extraHr: 600,
+    },
   },
   {
     id: "tt-18",
     name: "Tempo Traveller 18 A/C",
     category: "Tempo Travellers",
     seats: "18+1",
-    image: "https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/7b/51/ec/7b51eccb7d78865b277dcdcf0c4c2260.jpg",
     outstationRate: 26,
     driverBata: 900,
     localPricing: {
@@ -135,15 +142,16 @@ const VEHICLES = [
       eightHours: 7000,
       twelveHours: 9900,
       extraKm: 35,
-      extraHr: 700
-    }
+      extraHr: 700,
+    },
   },
   {
     id: "minibus-21",
     name: "Mini Bus 21 Seater",
     category: "Mini Buses",
     seats: "21+1",
-    image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/22/49/f8/2249f882da27004c2d6bc07085ea6349.jpg",
     outstationRate: 30,
     driverBata: 1000,
     localPricing: {
@@ -151,15 +159,16 @@ const VEHICLES = [
       eightHours: 9000,
       twelveHours: 12200,
       extraKm: 40,
-      extraHr: 800
-    }
+      extraHr: 800,
+    },
   },
   {
     id: "minibus-32",
     name: "Mini Bus 32 Seater",
     category: "Mini Buses",
     seats: "32+1",
-    image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&q=80&w=600",
+    image:
+      "https://i.pinimg.com/736x/5a/2c/24/5a2c24f96ef56e633fec7fc21aff079f.jpg",
     outstationRate: 50,
     driverBata: 1200,
     localPricing: {
@@ -167,9 +176,9 @@ const VEHICLES = [
       eightHours: 12000,
       twelveHours: 18000,
       extraKm: 50,
-      extraHr: 1500
-    }
-  }
+      extraHr: 1500,
+    },
+  },
 ];
 
 export default function Fleet({ onBookNowClick }) {
