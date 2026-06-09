@@ -66,7 +66,7 @@ const VEHICLES = [
     name: "Innova Crysta",
     category: "SUVs",
     seats: "7+1",
-    image: "/public/inova crysta.jfif",
+    image: "/inova crysta.jfif",
     outstationRate: 22,
     driverBata: 600,
     localPricing: {
