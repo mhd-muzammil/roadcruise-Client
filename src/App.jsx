@@ -11,6 +11,7 @@ import About from "./pages/About";
 import ToursTravels from "./pages/ToursTravels";
 import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
+import Blog from "./pages/Blog";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/vehicles" element={<Fleet onBookNowClick={openBooking} />} />
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
+          <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
         </Routes>
 

@@ -47,6 +47,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
           <NavLink to="/about" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>About</NavLink>
           <NavLink to="/vehicles" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Vehicles</NavLink>
           <NavLink to="/tours-travels" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Tours & Travels</NavLink>
+          <NavLink to="/blog" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Blog</NavLink>
           <NavLink to="/contact" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Contact</NavLink>
         </nav>
 
@@ -129,6 +130,13 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
             className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
           >
             Tours & Travels
+          </NavLink>
+          <NavLink 
+            to="/blog" 
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+          >
+            Blog
           </NavLink>
           <NavLink 
             to="/contact" 
