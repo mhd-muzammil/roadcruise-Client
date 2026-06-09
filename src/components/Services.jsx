@@ -9,6 +9,7 @@ const SERVICES_DATA = [
     description: "Travel anywhere in South India with certified professional drivers. Safe, sanitized, GPS-tracked premium sedans & SUVs.",
     price: "₹14/km onwards",
     icon: Milestone,
+    image: "https://img.freepik.com/premium-photo/car-driving-scenic-mountain-road-sunset-with-beautiful-view-landscape-water-distance_260899-5940.jpg",
     actionLabel: "Book Rental",
     exploreLink: "#vehicles",
     type: "vehicle",
@@ -21,6 +22,7 @@ const SERVICES_DATA = [
     description: "Ideal for weddings, corporate meets, airport drop-offs, or shopping sprees. Choose convenient 4h, 8h, or 12h rental packages.",
     price: "₹1,250 onwards",
     icon: Clock,
+    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Hourly",
     exploreLink: "#vehicles",
     type: "vehicle",
@@ -33,6 +35,7 @@ const SERVICES_DATA = [
     description: "Bespoke tour packages to Ooty, Kodaikanal, and Kerala backwaters. Includes private transport, 4★ stays, breakfast, and sightseeing.",
     price: "₹4,999/Person onwards",
     icon: Palmtree,
+    image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Package",
     exploreLink: "#packages",
     type: "package",
@@ -45,6 +48,7 @@ const SERVICES_DATA = [
     description: "Spacious luxury travel. Rent high-end Urbania coaches, spacious Tempo Travellers, or premium buses for corporate and family groups.",
     price: "GPS & AC Enabled",
     icon: Users,
+    image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Coach",
     exploreLink: "#vehicles",
     type: "vehicle",
@@ -85,23 +89,34 @@ export default function Services({ onBookNowClick }) {
             return (
               <div
                 key={service.id}
-                className="group relative flex flex-col justify-between p-8 rounded-3xl glass-premium hover:border-gold/40 hover:scale-[1.03] hover:-translate-y-1 shadow-2xl hover:shadow-gold/5 transition-all duration-500 bg-white/40 dark:bg-zinc-900/10"
+                className="group relative flex flex-col justify-between p-8 rounded-3xl glass-premium hover:border-gold/50 hover:scale-[1.03] hover:-translate-y-2 shadow-2xl hover:shadow-gold/5 transition-all duration-500 bg-white/40 dark:bg-zinc-900/10 overflow-hidden"
                 style={{ animationDelay: `${index * 150}ms` }}
               >
                 {/* Ambient interior card glow on hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-gold/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity duration-500 pointer-events-none"></div>
 
                 {/* Golden top highlight line on hover */}
-                <div className="absolute top-0 left-10 right-10 h-[2px] bg-gradient-to-r from-transparent via-gold/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-gold to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
                 <div className="space-y-6 relative z-10">
-                  {/* Icon Wrapper */}
-                  <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center border border-zinc-200 dark:border-white/10 group-hover:border-gold/50 group-hover:bg-gold/15 text-zinc-700 dark:text-zinc-300 group-hover:text-gold group-hover:shadow-lg group-hover:shadow-gold/10 transition-all duration-300 shadow-inner">
-                    <IconComponent className="w-6 h-6" />
+                  {/* Stretched Image Container */}
+                  <div className="h-44 relative overflow-hidden rounded-2xl -mx-8 -mt-8 mb-6 bg-zinc-950">
+                    <img 
+                      src={service.image} 
+                      alt={service.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-90 group-hover:brightness-100"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/60 to-transparent"></div>
+
+                    {/* Floating overlapping Icon Wrapper */}
+                    <div className="absolute bottom-4 left-6 w-12 h-12 rounded-2xl bg-zinc-950/80 backdrop-blur-md flex items-center justify-center border border-white/10 group-hover:border-gold/50 group-hover:bg-gold/15 text-zinc-300 group-hover:text-gold group-hover:shadow-lg group-hover:shadow-gold/10 transition-all duration-300">
+                      <IconComponent className="w-5 h-5" />
+                    </div>
                   </div>
 
                   {/* Title & Subtitle */}
-                  <div>
+                  <div className="text-left">
                     <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white group-hover:text-gold transition-colors tracking-wide">
                       {service.title}
                     </h3>
@@ -111,13 +126,13 @@ export default function Services({ onBookNowClick }) {
                   </div>
 
                   {/* Description */}
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 font-light leading-relaxed text-left">
                     {service.description}
                   </p>
                 </div>
 
                 {/* Price & CTA Action footer */}
-                <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-white/5 space-y-4 relative z-10">
+                <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-white/5 space-y-4 relative z-10 text-left">
                   <div className="flex items-baseline justify-between">
                     <span className="text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold">Price Rate</span>
                     <span className="text-sm font-serif font-bold text-gold text-glow-gold">{service.price}</span>

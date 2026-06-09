@@ -61,7 +61,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
             <span>+91 98000 00000</span>
           </a>
           
-          {/* Theme switcher */}
+          {/* Theme switcher (On Hold)
           <button
             onClick={onThemeToggle}
             className="p-2 rounded-full border border-zinc-200 dark:border-white/10 hover:border-gold/50 dark:hover:border-gold/50 text-zinc-600 dark:text-zinc-400 hover:text-gold dark:hover:text-gold bg-zinc-100 dark:bg-white/5 active:scale-95 transition-all cursor-pointer"
@@ -69,6 +69,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
           >
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+          */}
 
           <button
             onClick={() => onBookNowClick("General Query", "general")}
@@ -80,7 +81,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
 
         {/* Mobile Menu Trigger & Theme switch */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Theme Switcher for Mobile */}
+          {/* Theme Switcher for Mobile (On Hold)
           <button
             onClick={onThemeToggle}
             className="p-2 rounded-full border border-zinc-200 dark:border-white/10 hover:border-gold/50 text-zinc-600 dark:text-zinc-400 hover:text-gold bg-zinc-100 dark:bg-white/5 active:scale-95 transition-all"
@@ -88,6 +89,7 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
           >
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+          */}
           
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
