@@ -156,22 +156,43 @@ export default function About() {
 
         {/* Values cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {CORE_VALUES.map((val) => {
+          {CORE_VALUES.map((val, idx) => {
             const ValIcon = val.icon;
             return (
               <div 
                 key={val.title}
-                className="p-8 rounded-3xl glass-premium border border-zinc-200 dark:border-white/5 flex flex-col space-y-4 text-left hover:border-gold/30 hover:scale-[1.01] transition-all bg-white/40 dark:bg-zinc-900/10"
+                className="group relative p-8 rounded-3xl glass-premium border border-zinc-200 dark:border-white/5 flex flex-col justify-between space-y-6 text-left hover:border-gold/50 hover:scale-[1.03] hover:-translate-y-2 shadow-2xl hover:shadow-gold/5 transition-all duration-500 bg-white/40 dark:bg-zinc-900/10 overflow-hidden"
               >
-                <div className="w-12 h-12 rounded-2xl bg-gold/15 flex items-center justify-center text-gold border border-gold/30 shadow-lg shadow-gold/5">
-                  <ValIcon className="w-6 h-6 text-glow-gold" />
+                {/* Accent glow top line on hover */}
+                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-gold to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+
+                {/* Shimmer sweep effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none"></div>
+
+                {/* Index Watermark in background */}
+                <span className="absolute right-6 top-4 text-7xl font-serif font-extrabold text-gold/[0.03] dark:text-gold/[0.05] group-hover:text-gold/[0.12] transition-colors duration-500 select-none pointer-events-none">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+
+                <div className="space-y-4 relative z-10">
+                  {/* Icon Frame */}
+                  <div className="w-12 h-12 rounded-2xl bg-gold/15 flex items-center justify-center text-gold border border-gold/30 group-hover:bg-gradient-to-br group-hover:from-gold group-hover:to-amber-500 group-hover:text-zinc-950 group-hover:border-gold/50 group-hover:shadow-lg group-hover:shadow-gold/20 transition-all duration-500">
+                    <ValIcon className="w-6 h-6 text-glow-gold transition-transform group-hover:scale-110 duration-300" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white group-hover:text-gold transition-colors tracking-wide">
+                      {val.title}
+                    </h3>
+                    
+                    {/* Tiny accent line under heading */}
+                    <div className="w-8 h-[2px] bg-gold/30 group-hover:w-16 group-hover:bg-gold transition-all duration-500"></div>
+                  </div>
+
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-light font-sans">
+                    {val.desc}
+                  </p>
                 </div>
-                <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white tracking-wide">
-                  {val.title}
-                </h3>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-light">
-                  {val.desc}
-                </p>
               </div>
             );
           })}
