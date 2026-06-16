@@ -28,7 +28,7 @@ const STORIES = [
     readTime: "5 min read",
     title: "A honeymoon along the backwaters",
     desc: "Kerala by private premium houseboat: a magical getaway curated with pristine views, traditional candlelight dinners, and tranquil rides.",
-    image: "https://images.unsplash.com/photo-1593693411515-c202e974fe05?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&q=80&w=800",
     author: "Vijay & Priya",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100"
   }

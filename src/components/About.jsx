@@ -52,17 +52,20 @@ const CORE_VALUES = [
   {
     title: "Safety & Integrity",
     desc: "Every fleet vehicle is GPS-monitored with strict speed-limits and certified drivers. Your safety is our absolute priority.",
-    icon: Shield
+    icon: Shield,
+    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800"
   },
   {
     title: "Luxury Excellence",
     desc: "Meticulously maintained, deep-cleaned interiors, premium seating arrangements, and premium climate controls.",
-    icon: Sparkles
+    icon: Sparkles,
+    image: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=800"
   },
   {
     title: "Absolute Transparency",
     desc: "Upfront pricing calculations, detailed outstation/local invoices, and zero hidden charges at the end of the trip.",
-    icon: Target
+    icon: Target,
+    image: "https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?auto=format&fit=crop&q=80&w=800"
   }
 ];
 
@@ -156,42 +159,43 @@ export default function About() {
 
         {/* Values cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {CORE_VALUES.map((val, idx) => {
+          {CORE_VALUES.map((val) => {
             const ValIcon = val.icon;
             return (
               <div 
                 key={val.title}
-                className="group relative p-8 rounded-3xl glass-premium border border-zinc-200 dark:border-white/5 flex flex-col justify-between space-y-6 text-left hover:border-gold/50 hover:scale-[1.03] hover:-translate-y-2 shadow-2xl hover:shadow-gold/5 transition-all duration-500 bg-white/40 dark:bg-zinc-900/10 overflow-hidden"
+                className="group relative h-[380px] rounded-3xl overflow-hidden border border-zinc-200 dark:border-white/5 shadow-lg flex flex-col justify-end transition-all duration-500 hover:shadow-2xl hover:border-gold/30 hover:-translate-y-2 cursor-pointer"
               >
-                {/* Accent glow top line on hover */}
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-gold to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                {/* Background Image */}
+                <img 
+                  src={val.image} 
+                  alt={val.title} 
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+                />
 
-                {/* Shimmer sweep effect on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none"></div>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/20 group-hover:via-zinc-950/80 transition-all duration-300 z-10"></div>
 
-                {/* Index Watermark in background */}
-                <span className="absolute right-6 top-4 text-7xl font-serif font-extrabold text-gold/[0.03] dark:text-gold/[0.05] group-hover:text-gold/[0.12] transition-colors duration-500 select-none pointer-events-none">
-                  {String(idx + 1).padStart(2, "0")}
-                </span>
-
-                <div className="space-y-4 relative z-10">
-                  {/* Icon Frame */}
-                  <div className="w-12 h-12 rounded-2xl bg-gold/15 flex items-center justify-center text-gold border border-gold/30 group-hover:bg-gradient-to-br group-hover:from-gold group-hover:to-amber-500 group-hover:text-zinc-950 group-hover:border-gold/50 group-hover:shadow-lg group-hover:shadow-gold/20 transition-all duration-500">
-                    <ValIcon className="w-6 h-6 text-glow-gold transition-transform group-hover:scale-110 duration-300" />
+                {/* Content Card */}
+                <div className="relative z-20 p-6 flex flex-col h-full justify-between">
+                  
+                  {/* Top Row: Icon Frame */}
+                  <div className="flex items-start">
+                    <div className="w-12 h-12 rounded-2xl bg-gold/15 backdrop-blur-md flex items-center justify-center text-gold border border-gold/30 group-hover:bg-gold group-hover:text-zinc-950 transition-all duration-500">
+                      <ValIcon className="w-6 h-6 text-glow-gold group-hover:text-zinc-950 transition-colors" />
+                    </div>
                   </div>
 
+                  {/* Bottom Row: Text content */}
                   <div className="space-y-2">
-                    <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white group-hover:text-gold transition-colors tracking-wide">
+                    <h3 className="text-xl font-serif font-bold text-white tracking-wide leading-tight group-hover:text-gold transition-colors duration-300">
                       {val.title}
                     </h3>
-                    
-                    {/* Tiny accent line under heading */}
-                    <div className="w-8 h-[2px] bg-gold/30 group-hover:w-16 group-hover:bg-gold transition-all duration-500"></div>
+                    <p className="text-xs text-zinc-200/90 leading-relaxed font-light font-sans">
+                      {val.desc}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-light font-sans">
-                    {val.desc}
-                  </p>
                 </div>
               </div>
             );
