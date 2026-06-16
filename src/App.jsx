@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import BookingModal from "./components/BookingModal";
+import AuthModal from "./components/AuthModal";
 import ScrollToTop from "./components/common/ScrollToTop";
 
 // Page Imports
@@ -12,11 +13,19 @@ import ToursTravels from "./pages/ToursTravels";
 import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
 import Blog from "./pages/Blog";
+import Admin from "./pages/Admin";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem("rc_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Sync theme selection to document element
   useEffect(() => {
@@ -36,6 +45,19 @@ export default function App() {
     setIsDarkMode((prev) => !prev);
   };
 
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem("rc_user", JSON.stringify(user));
+    if (user.role === "admin") {
+      window.location.hash = "#/admin";
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("rc_user");
+  };
+
   return (
     <Router>
       <ScrollToTop />
@@ -45,6 +67,9 @@ export default function App() {
           onBookNowClick={openBooking} 
           isDarkMode={isDarkMode} 
           onThemeToggle={toggleTheme} 
+          currentUser={currentUser}
+          onAuthClick={() => setIsAuthOpen(true)}
+          onLogout={handleLogout}
         />
 
         <Routes>
@@ -54,6 +79,7 @@ export default function App() {
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
         </Routes>
 
         {/* Footer Section */}
@@ -67,6 +93,15 @@ export default function App() {
             setSelectedItem(null);
           }}
           selectedItem={selectedItem}
+          currentUser={currentUser}
+          onAuthTrigger={() => setIsAuthOpen(true)}
+        />
+
+        {/* Authentication Modal */}
+        <AuthModal 
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onAuthSuccess={handleAuthSuccess}
         />
       </div>
     </Router>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Compass, Phone, Menu, X, Sun, Moon } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
-export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
+export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, currentUser, onAuthClick, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -61,15 +61,44 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
             <span>+91 98000 00000</span>
           </a>
           
-          {/* Theme switcher (On Hold)
-          <button
-            onClick={onThemeToggle}
-            className="p-2 rounded-full border border-zinc-200 dark:border-white/10 hover:border-gold/50 dark:hover:border-gold/50 text-zinc-600 dark:text-zinc-400 hover:text-gold dark:hover:text-gold bg-zinc-100 dark:bg-white/5 active:scale-95 transition-all cursor-pointer"
-            aria-label="Toggle theme mode"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-          */}
+          {currentUser ? (
+            <div className="relative group/user font-sans">
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 text-xs font-semibold hover:border-gold transition-all cursor-pointer">
+                <div className="w-5 h-5 rounded-full bg-gold text-zinc-950 flex items-center justify-center font-bold text-[10px]">
+                  {currentUser.name[0].toUpperCase()}
+                </div>
+                <span className="text-zinc-900 dark:text-white max-w-[80px] truncate">{currentUser.name}</span>
+              </button>
+              
+              <div className="absolute right-0 mt-2 w-40 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/5 shadow-2xl p-1.5 hidden group-hover/user:block hover:block animate-fade-in z-50">
+                <div className="px-3 py-1.5 border-b border-zinc-150 dark:border-white/5 mb-1">
+                  <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider">Account</p>
+                  <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{currentUser.email}</p>
+                </div>
+                {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
+                  <Link
+                    to="/admin"
+                    className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={onLogout}
+                  className="w-full text-left px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={onAuthClick}
+              className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 hover:text-gold hover:border-gold border border-zinc-200 dark:border-white/10 active:scale-95 transition-all duration-300 cursor-pointer"
+            >
+              Sign In
+            </button>
+          )}
 
           <button
             onClick={() => onBookNowClick("General Query", "general")}
@@ -148,6 +177,50 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle }) {
             Contact
           </NavLink>
           <div className="h-[1px] bg-zinc-200 dark:bg-white/5 my-2"></div>
+          {currentUser ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2.5 bg-zinc-50 dark:bg-white/5 rounded-xl text-left">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gold text-zinc-950 flex items-center justify-center font-bold text-xs">
+                    {currentUser.name[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{currentUser.name}</p>
+                    <p className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate max-w-[120px]">{currentUser.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onLogout();
+                  }}
+                  className="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-xs font-bold transition-all"
+                >
+                  Logout
+                </button>
+              </div>
+              {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full block text-center py-2 bg-gold/15 text-gold border border-gold/30 rounded-xl text-xs font-bold hover:bg-gold hover:text-zinc-950 transition-all uppercase tracking-wider"
+                >
+                  Go to Admin Panel
+                </Link>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onAuthClick();
+              }}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 active:scale-95 transition-all text-center"
+            >
+              Sign In / Sign Up
+            </button>
+          )}
+
           <div className="flex items-center justify-between">
             <a 
               href="tel:+919800000000" 
