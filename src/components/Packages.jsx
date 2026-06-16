@@ -10,7 +10,7 @@ const PACKAGES_DATA = [
     price: "4,999",
     rating: "4.9",
     reviewsCount: 142,
-    image: "https://images.unsplash.com/photo-1626583223726-b259a1cf244c?auto=format&fit=crop&q=80&w=600",
+    image: "https://images.pexels.com/photos/26933686/pexels-photo-26933686.jpeg",
     inclusions: [
       "Selected 4★ Boutique Stay",
       "Private Transport (Dzire/SUV)",
@@ -58,7 +58,7 @@ const PACKAGES_DATA = [
     price: "7,999",
     rating: "4.7",
     reviewsCount: 110,
-    image: "https://images.unsplash.com/photo-1593693411515-c202e974fe05?auto=format&fit=crop&q=80&w=600",
+    image: "https://images.pexels.com/photos/29535096/pexels-photo-29535096.jpeg",
     inclusions: [
       "Heritage Plantation Homestay",
       "Abbey & Iruppu Falls Sightseeing",
