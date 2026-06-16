@@ -55,11 +55,11 @@ export default function Hero({ onBookNowClick }) {
           loop
           muted
           playsInline
-          poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1920"
-          className="w-full h-full object-cover opacity-15 dark:opacity-100 transition-opacity duration-500"
+          //poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1920"
+          className="w-full h-full object-cover opacity-10 dark:opacity-100 transition-opacity duration-500"
         >
           <source 
-            src="https://www.pexels.com/download/video/16268996/" 
+            src="https://www.pexels.com/download/video/32298055/" 
             type="video/mp4" 
           />
           Your browser does not support the video tag.

@@ -6,10 +6,33 @@ export default function ToursTravels({ onBookNowClick }) {
   const [activeTab, setActiveTab] = useState("packages"); // "packages" | "destinations"
 
   return (
-    <div className="pt-24 min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
-      {/* Page Header */}
-      <div className="py-12 border-b border-zinc-200 dark:border-white/5 bg-white/50 dark:bg-zinc-900/20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+      {/* Page Header with Video Background */}
+      <div className="relative min-h-screen flex items-center justify-center pt-32 pb-20 overflow-hidden border-b border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-950">
+        {/* Background Overlay */}
+        <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/70 via-zinc-50/95 to-white dark:from-zinc-900/30 dark:via-zinc-950/95 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
+
+        {/* Cinematic Vignette */}
+        <div className="absolute inset-0 cinematic-vignette z-15 pointer-events-none opacity-30 dark:opacity-90"></div>
+
+        {/* Background Video */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover opacity-15 dark:opacity-100 transition-opacity duration-500"
+          >
+            <source 
+              src="https://www.pexels.com/download/video/33193321/" 
+              type="video/mp4" 
+            />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div className="relative z-20 max-w-7xl mx-auto px-6 text-center space-y-4 w-full">
           <h1 className="text-xs font-semibold tracking-[0.3em] text-gold uppercase">Tours & Travels</h1>
           <p className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white leading-tight">
             Crafting Extraordinary Journeys
