@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react";
 import { loginUser, registerUser } from "../utils/api";
+import GoogleSignInButton from "./common/GoogleSignInButton";
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState("signin"); // "signin" | "signup"
@@ -263,6 +264,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               {activeTab === "signin" ? "Sign In to Cruise" : "Create Luxury Account"}
             </button>
           </form>
+
+          {/* Continue with Google (additive — existing email/password flow above is unchanged) */}
+          <GoogleSignInButton
+            onAuthSuccess={onAuthSuccess}
+            onClose={onClose}
+            onError={(msg) => setErrors({ general: msg })}
+          />
 
           {/* Quick Mock Login Notice */}
           <div className="mt-4 text-center">
