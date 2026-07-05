@@ -162,7 +162,9 @@ export default function AdminPanel({ currentUser, onBypassAdmin }) {
       return;
     }
     try {
-      await createBooking(newBooking);
+      // Admin-entered bookings are recorded directly (no online payment step);
+      // the admin controls the status from the dashboard.
+      await createBooking({ ...newBooking, paymentMode: "arrival" });
       loadBookings();
       setShowAddForm(false);
       setNewBooking({
