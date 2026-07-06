@@ -47,17 +47,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       newErrors.email = "Invalid email format";
     }
 
+    // Password policy — MUST mirror the backend (min 8, upper, lower, number,
+    // special). Enforced on sign-up; sign-in only checks presence (the server is
+    // the source of truth for an existing password).
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    // Stealth Admin Password verification
-    if (activeTab === "signin" && formData.email.trim() === "admin@roadcruise.com") {
-      if (formData.password !== "admin123") {
-        newErrors.password = "Incorrect password for administrator account";
-      }
+    } else if (activeTab === "signup") {
+      const p = formData.password;
+      if (p.length < 8) newErrors.password = "At least 8 characters";
+      else if (!/[A-Z]/.test(p)) newErrors.password = "Add an uppercase letter";
+      else if (!/[a-z]/.test(p)) newErrors.password = "Add a lowercase letter";
+      else if (!/[0-9]/.test(p)) newErrors.password = "Add a number";
+      else if (!/[^A-Za-z0-9]/.test(p)) newErrors.password = "Add a special character (e.g. @ # !)";
     }
 
     if (activeTab === "signup") {
@@ -254,6 +255,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
+              {activeTab === "signup" && !errors.password && (
+                <p className="text-zinc-400 dark:text-zinc-500 text-[11px] mt-1">
+                  Min 8 characters with an uppercase, lowercase, number & special character.
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -272,10 +278,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             onError={(msg) => setErrors({ general: msg })}
           />
 
-          {/* Quick Mock Login Notice */}
+          {/* Secure-account notice */}
           <div className="mt-4 text-center">
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 italic block">
-              Mock auth environment active. Any email & password (min 6 char) will register/log in.
+              Your account is secured with encrypted authentication.
             </span>
           </div>
         </div>
