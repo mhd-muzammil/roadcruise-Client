@@ -54,11 +54,11 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
         {/* Action controls */}
         <div className="hidden md:flex items-center gap-4">
           <a 
-            href="tel:+919800000000" 
+            href="tel:+917338899062"
             className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-gold text-xs transition-colors"
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>+91 98000 00000</span>
+            <span>+91 73388 99062</span>
           </a>
           
           {currentUser ? (
@@ -223,11 +223,11 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
 
           <div className="flex items-center justify-between">
             <a 
-              href="tel:+919800000000" 
+              href="tel:+917338899062"
               className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-gold text-sm"
             >
               <Phone className="w-4 h-4" />
-              <span>+91 98000 00000</span>
+              <span>+91 73388 99062</span>
             </a>
             <button
               onClick={() => {

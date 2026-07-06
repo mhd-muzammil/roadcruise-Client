@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { X, Calendar, Phone, User, Compass, CheckCircle, ShieldCheck, Lock, Clock, CreditCard, Banknote } from "lucide-react";
-import { createBooking, verifyPayment } from "../utils/api";
+import {
+  X, Calendar, Phone, User, Compass, CheckCircle, ShieldCheck, Lock, Clock,
+  CreditCard, Banknote, MapPin, Users, Car, Package as PackageIcon,
+} from "lucide-react";
+import { createBooking, verifyPayment, simulateMockCheckout } from "../utils/api";
 
 // Dynamically load Razorpay's hosted checkout (only when needed). The hosted
 // widget handles card/UPI/netbanking securely — no raw card data ever touches
@@ -17,24 +20,85 @@ function loadRazorpay() {
   });
 }
 
+// Preferred-vehicle options offered on the package form.
+const VEHICLE_PREFERENCES = [
+  "No preference (recommend for me)",
+  "Sedan (Dzire, Aura, Amaze)",
+  "SUV (Ertiga, Carens, Marazzo)",
+  "Innova Crysta / Hycross",
+  "Tempo Traveller",
+  "Mini Bus",
+];
+
+// Pull a positive integer rupee amount out of a display price like "4,999".
+const parsePrice = (p) => {
+  const n = Number(String(p ?? "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
+
+// Small presentational field wrapper (label + optional leading icon + error).
+function Field({ label, error, icon: Icon, children, hint }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      <div className="relative">
+        {Icon && (
+          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
+            <Icon className="w-4 h-4" />
+          </span>
+        )}
+        {children}
+      </div>
+      {hint && !error && <p className="text-zinc-400 dark:text-zinc-500 text-[11px] mt-1">{hint}</p>}
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
+}
+
+const fieldCls = (hasError, withIcon = true) =>
+  `w-full bg-zinc-50 dark:bg-white/5 border ${
+    hasError ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+  } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 ${
+    withIcon ? "pl-10" : "pl-4"
+  } pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`;
+
+const selectCls =
+  "w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer transition-all";
+
 export default function BookingModal({ isOpen, onClose, selectedItem, currentUser, onAuthTrigger }) {
-  // "auth_prompt" | "form" | "pay" | "processing" | "success" | "pending"
+  // "auth_prompt" | "form" | "pay" | "mock_pay" | "processing" | "success" | "pending"
   const [step, setStep] = useState("auth_prompt");
+  // Holds the mock order details while the simulated (preview) checkout is open.
+  const [mockCheckout, setMockCheckout] = useState(null); // { orderId, booking }
+
+  // Booking context: general (header), vehicle (fleet), or package (tours).
+  const mode = selectedItem?.type === "package" ? "package"
+    : selectedItem?.type === "vehicle" ? "vehicle"
+    : "general";
+  const vehicleMeta = selectedItem?.vehicle || null;
+  const packageMeta = selectedItem?.pkg || null;
+
+  // Indicative fare — the team confirms the final amount. Vehicle bookings use
+  // the 8h local-package rate as a sensible estimate; packages use the listed
+  // price; the general enquiry uses a flat base estimate.
+  const fare =
+    mode === "package"
+      ? parsePrice(packageMeta?.price) || 4800
+      : mode === "vehicle"
+      ? parsePrice(vehicleMeta?.localPricing?.eightHours) || 2500
+      : 2500;
 
   const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    fromDate: "",
-    toDate: "",
-    tripType: "Round-trip",
-    notes: ""
+    name: "", phone: "", pickup: "", drop: "",
+    fromDate: "", toDate: "", tripType: "Round-trip",
+    passengers: "", pickupTime: "", vehiclePreference: VEHICLE_PREFERENCES[0], notes: "",
   });
   const [errors, setErrors] = useState({});
   const [processingStatus, setProcessingStatus] = useState("Opening secure payment…");
   const [result, setResult] = useState(null); // { booking, mode }
   const [apiError, setApiError] = useState("");
-
-  const fare = selectedItem?.type === "package" ? 4800 : 2500;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -42,15 +106,21 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     setFormData({
       name: currentUser?.name || "",
       phone: currentUser?.phone || "",
+      pickup: "",
+      drop: "",
       fromDate: "",
       toDate: "",
-      tripType: selectedItem?.type === "package" ? "Tour Package" : "Round-trip",
-      notes: ""
+      tripType: mode === "package" ? "Tour Package" : "Round-trip",
+      passengers: "",
+      pickupTime: "",
+      vehiclePreference: VEHICLE_PREFERENCES[0],
+      notes: "",
     });
     setErrors({});
     setResult(null);
     setApiError("");
-  }, [isOpen, currentUser, selectedItem]);
+    setMockCheckout(null);
+  }, [isOpen, currentUser, selectedItem, mode]);
 
   if (!isOpen) return null;
 
@@ -68,11 +138,18 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     } else if (!/^\+?[0-9\s-]{10,14}$/.test(formData.phone.trim())) {
       newErrors.phone = "Enter a valid phone number (min 10 digits)";
     }
+    if (!formData.pickup.trim()) newErrors.pickup = "Pickup location is required";
+    // "Drop" only applies to point-to-point trips (general + vehicle), not to a
+    // package (its destination is the package itself).
+    if (mode !== "package" && !formData.drop.trim()) newErrors.drop = "Drop location is required";
     if (!formData.fromDate) newErrors.fromDate = "From date is required";
     if (!formData.toDate) {
       newErrors.toDate = "To date is required";
     } else if (formData.fromDate && new Date(formData.toDate) < new Date(formData.fromDate)) {
       newErrors.toDate = "To date must be after or equal to from date";
+    }
+    if (formData.passengers && !/^\d{1,3}$/.test(String(formData.passengers).trim())) {
+      newErrors.passengers = "Enter a valid number of passengers";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -86,14 +163,29 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     }
   };
 
-  // Common booking payload built from the form.
+  // Common booking payload built from the form + booking context.
   const buildPayload = (paymentMode) => ({
     name: formData.name,
     phone: formData.phone,
     fromDate: formData.fromDate,
     toDate: formData.toDate,
     tripType: formData.tripType,
-    item: selectedItem?.name || "General Query",
+    item: selectedItem?.name || "General Enquiry",
+    category: mode,
+    pickup: formData.pickup,
+    drop: mode === "package" ? "" : formData.drop,
+    // For a vehicle booking the chosen vehicle IS the item; for a package it's
+    // the customer's preferred vehicle; general enquiries leave it blank.
+    vehicle:
+      mode === "vehicle"
+        ? selectedItem?.name || ""
+        : mode === "package"
+        ? formData.vehiclePreference
+        : "",
+    packageName: mode === "package" ? selectedItem?.name || "" : "",
+    passengers: formData.passengers,
+    pickupTime: formData.pickupTime,
+    notes: formData.notes,
     fare,
     paymentMode,
     paymentMethod: paymentMode === "arrival" ? "Pay on arrival" : "Online",
@@ -142,15 +234,13 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
 
     const co = res.checkout;
 
-    // Dev/mock provider has no browser widget — the booking stays PendingPayment
-    // until a real (Razorpay) payment is verified server-side.
+    // Mock provider (no real gateway configured yet): open the simulated
+    // test-payment dialog so the client can preview the full flow. Switching to
+    // real Razorpay is purely an env change (PAYMENT_PROVIDER + keys) — this
+    // branch simply stops running once a real gateway returns provider:razorpay.
     if (co.provider !== "razorpay") {
-      setResult({
-        booking: res.booking,
-        mode: "pending_payment",
-        note: "Online payments run in test mode on this environment. Your booking is saved and awaiting payment confirmation."
-      });
-      setStep("pending");
+      setMockCheckout({ orderId: co.orderId, booking: res.booking });
+      setStep("mock_pay");
       return;
     }
 
@@ -198,6 +288,42 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     rzp.open();
   };
 
+  // --- Simulated (preview) checkout, used only while the mock gateway is active ---
+  const handleMockSuccess = async () => {
+    if (!mockCheckout) return;
+    setApiError("");
+    setProcessingStatus("Verifying your payment…");
+    setStep("processing");
+    try {
+      const sig = await simulateMockCheckout(mockCheckout.orderId);
+      await verifyPayment({ orderId: sig.orderId, paymentId: sig.paymentId, signature: sig.signature });
+      setResult({ booking: { ...mockCheckout.booking, status: "Approved" }, mode: "paid" });
+      setStep("success");
+    } catch (err) {
+      setApiError(err.message || "Test payment could not be verified.");
+      setStep("mock_pay");
+    }
+  };
+
+  const handleMockFailure = () => {
+    setResult({
+      booking: mockCheckout?.booking,
+      mode: "pending_payment",
+      note: "Test payment was cancelled. Your booking is held as awaiting payment.",
+    });
+    setStep("pending");
+  };
+
+  const headerTitle = {
+    auth_prompt: "Authentication Required",
+    form: mode === "package" ? "Book Your Package" : mode === "vehicle" ? "Book This Vehicle" : "Book Your Journey",
+    pay: "Choose Payment",
+    mock_pay: "Secure Payment (Test Mode)",
+    processing: "Please Wait",
+    success: "Booking Confirmed",
+    pending: "Booking Received",
+  }[step];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 dark:bg-black/80 backdrop-blur-md p-4 animate-fade-in">
       <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-gold/30 shadow-2xl shadow-gold/5 flex flex-col max-h-[90vh]">
@@ -206,15 +332,12 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
         <div className="p-5 border-b border-zinc-150 dark:border-white/5 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/10">
           <div>
             <h3 className="text-lg font-bold font-serif text-zinc-900 dark:text-white tracking-wide">
-              {step === "auth_prompt" && "Authentication Required"}
-              {step === "form" && "Book Your Journey"}
-              {step === "pay" && "Choose Payment"}
-              {step === "processing" && "Please Wait"}
-              {step === "success" && "Booking Confirmed"}
-              {step === "pending" && "Booking Received"}
+              {headerTitle}
             </h3>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-              {selectedItem ? `Selected: ${selectedItem.name}` : "Premium Travel Service"}
+              {selectedItem?.name && mode !== "general"
+                ? `${mode === "package" ? "Package" : "Vehicle"}: ${selectedItem.name}`
+                : "Premium Travel Service"}
             </p>
           </div>
           <button
@@ -258,121 +381,115 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
             </div>
           )}
 
-          {/* STEP 1: Reservation Form */}
+          {/* STEP 1: Reservation Form (context-aware) */}
           {step === "form" && (
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
-                    <User className="w-4 h-4" />
-                  </span>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
-                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
-                      errors.name ? "border-red-500" : "border-zinc-200 dark:border-white/10"
-                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`}
-                  />
+
+              {/* Selected vehicle / package summary card */}
+              {mode !== "general" && selectedItem?.name && (
+                <div className="flex items-center gap-3 rounded-xl border border-gold/30 bg-gold/5 p-3.5">
+                  <div className="w-10 h-10 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0">
+                    {mode === "package" ? <PackageIcon className="w-5 h-5 text-gold" /> : <Car className="w-5 h-5 text-gold" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                      {mode === "package" ? "Selected Package" : "Selected Vehicle"}
+                    </p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">{selectedItem.name}</p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      {mode === "package"
+                        ? [packageMeta?.duration, packageMeta?.price && `₹${packageMeta.price}`].filter(Boolean).join(" · ")
+                        : [vehicleMeta?.seats && `${vehicleMeta.seats} seats`, vehicleMeta?.category].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
                 </div>
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
+              )}
+
+              {/* Full Name */}
+              <Field label="Full Name" error={errors.name} icon={User}>
+                <input
+                  type="text" name="name" value={formData.name} onChange={handleInputChange}
+                  placeholder="Enter your full name" className={fieldCls(errors.name)}
+                />
+              </Field>
 
               {/* Phone Number */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
-                    <Phone className="w-4 h-4" />
-                  </span>
+              <Field label="Phone Number" error={errors.phone} icon={Phone}>
+                <input
+                  type="tel" name="phone" value={formData.phone} onChange={handleInputChange}
+                  placeholder="e.g. +91 98765 43210" className={fieldCls(errors.phone)}
+                />
+              </Field>
+
+              {/* Pickup + Drop locations (Drop hidden for packages) */}
+              <div className={mode === "package" ? "" : "grid grid-cols-1 sm:grid-cols-2 gap-4"}>
+                <Field label={mode === "package" ? "Pickup Location" : "From (Pickup)"} error={errors.pickup} icon={MapPin}>
                   <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="e.g. +91 98765 43210"
-                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
-                      errors.phone ? "border-red-500" : "border-zinc-200 dark:border-white/10"
-                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`}
+                    type="text" name="pickup" value={formData.pickup} onChange={handleInputChange}
+                    placeholder="e.g. Chennai Airport" className={fieldCls(errors.pickup)}
                   />
-                </div>
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                </Field>
+                {mode !== "package" && (
+                  <Field label="To (Drop)" error={errors.drop} icon={MapPin}>
+                    <input
+                      type="text" name="drop" value={formData.drop} onChange={handleInputChange}
+                      placeholder="e.g. Kodaikanal" className={fieldCls(errors.drop)}
+                    />
+                  </Field>
+                )}
               </div>
 
               {/* Travel Dates */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                    From Date
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
-                      <Calendar className="w-4 h-4" />
-                    </span>
-                    <input
-                      type="date"
-                      name="fromDate"
-                      value={formData.fromDate}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-50 dark:bg-white/5 border ${
-                        errors.fromDate ? "border-red-500" : "border-zinc-200 dark:border-white/10"
-                      } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] transition-all`}
-                    />
-                  </div>
-                  {errors.fromDate && <p className="text-red-500 text-xs mt-1">{errors.fromDate}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                    To Date
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
-                      <Calendar className="w-4 h-4" />
-                    </span>
-                    <input
-                      type="date"
-                      name="toDate"
-                      value={formData.toDate}
-                      onChange={handleInputChange}
-                      className={`w-full bg-zinc-50 dark:bg-white/5 border ${
-                        errors.toDate ? "border-red-500" : "border-zinc-200 dark:border-white/10"
-                      } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] transition-all`}
-                    />
-                  </div>
-                  {errors.toDate && <p className="text-red-500 text-xs mt-1">{errors.toDate}</p>}
-                </div>
+                <Field label="From Date" error={errors.fromDate} icon={Calendar}>
+                  <input
+                    type="date" name="fromDate" value={formData.fromDate} onChange={handleInputChange}
+                    className={`${fieldCls(errors.fromDate)} [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </Field>
+                <Field label="To Date" error={errors.toDate} icon={Calendar}>
+                  <input
+                    type="date" name="toDate" value={formData.toDate} onChange={handleInputChange}
+                    className={`${fieldCls(errors.toDate)} [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                </Field>
               </div>
 
-              {/* Service/Trip Type */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-                  Trip Service Type
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
-                    <Compass className="w-4 h-4" />
-                  </span>
-                  <select
-                    name="tripType"
-                    value={formData.tripType}
-                    onChange={handleInputChange}
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer transition-all"
-                  >
+              {/* Vehicle preference (packages only) */}
+              {mode === "package" && (
+                <Field label="Preferred Vehicle" icon={Car}>
+                  <select name="vehiclePreference" value={formData.vehiclePreference} onChange={handleInputChange} className={selectCls}>
+                    {VEHICLE_PREFERENCES.map((v) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </Field>
+              )}
+
+              {/* Trip type + Passengers */}
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Trip Service Type" icon={Compass}>
+                  <select name="tripType" value={formData.tripType} onChange={handleInputChange} className={selectCls}>
                     <option value="Round-trip">Round-trip Rental</option>
                     <option value="One-way">One-way Drop</option>
-                    <option value="Tour Package">Tour Package Deal</option>
+                    <option value="Local">Local (Hourly)</option>
+                    <option value="Outstation">Outstation</option>
+                    <option value="Tour Package">Tour Package</option>
                   </select>
-                </div>
+                </Field>
+                <Field label="Passengers" error={errors.passengers} icon={Users}>
+                  <input
+                    type="number" min="1" name="passengers" value={formData.passengers} onChange={handleInputChange}
+                    placeholder="e.g. 4" className={fieldCls(errors.passengers)}
+                  />
+                </Field>
               </div>
+
+              {/* Pickup time */}
+              <Field label="Preferred Pickup Time (Optional)" icon={Clock}>
+                <input
+                  type="time" name="pickupTime" value={formData.pickupTime} onChange={handleInputChange}
+                  className={`${fieldCls(false)} [color-scheme:light] dark:[color-scheme:dark]`}
+                />
+              </Field>
 
               {/* Special Notes */}
               <div>
@@ -380,11 +497,8 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   Special Requirements (Optional)
                 </label>
                 <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows="2"
-                  placeholder="e.g. child seat, defensive chauffeur preference..."
+                  name="notes" value={formData.notes} onChange={handleInputChange} rows="2"
+                  placeholder="e.g. child seat, extra luggage, chauffeur preference…"
                   className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg p-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 resize-none transition-all"
                 ></textarea>
               </div>
@@ -409,6 +523,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 </div>
                 <span className="text-xl font-bold font-serif text-gold">₹{fare.toLocaleString("en-IN")}</span>
               </div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 -mt-2">
+                Indicative estimate. Our team confirms the final fare based on distance, tolls and your requirements.
+              </p>
 
               {apiError && (
                 <p className="text-red-500 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">{apiError}</p>
@@ -452,6 +569,57 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
               >
                 Back
               </button>
+            </div>
+          )}
+
+          {/* STEP 2b: Simulated payment (preview only — mock gateway) */}
+          {step === "mock_pay" && (
+            <div className="space-y-5">
+              {/* Test-mode banner */}
+              <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
+                <ShieldCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                  Test mode — no real money is charged. This is a preview of the secure payment step.
+                </p>
+              </div>
+
+              {/* Mock gateway card */}
+              <div className="rounded-xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+                <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 px-4 py-3 flex items-center justify-between">
+                  <span className="text-sm font-bold text-white">Road Cruise</span>
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400 font-bold">Sandbox</span>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Amount payable</span>
+                    <span className="text-xl font-bold font-serif text-zinc-900 dark:text-white">₹{fare.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-white/10 p-3 opacity-70">
+                    <CreditCard className="w-5 h-5 text-zinc-400" />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono tracking-wider">4111 1111 1111 1111 — TEST CARD</span>
+                  </div>
+                </div>
+              </div>
+
+              {apiError && (
+                <p className="text-red-500 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">{apiError}</p>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleMockSuccess}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Simulate Successful Payment
+                </button>
+                <button
+                  onClick={handleMockFailure}
+                  className="w-full py-2.5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5 font-bold text-xs uppercase tracking-wider transition-all"
+                >
+                  Cancel / Simulate Failure
+                </button>
+              </div>
             </div>
           )}
 

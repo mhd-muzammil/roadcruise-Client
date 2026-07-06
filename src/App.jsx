@@ -14,6 +14,10 @@ import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
 import Blog from "./pages/Blog";
 import Admin from "./pages/Admin";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Refund from "./pages/Refund";
+import FAQ from "./pages/FAQ";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -36,8 +40,15 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  const openBooking = (name, type = "vehicle") => {
-    setSelectedItem({ name, type });
+  // Accepts either a plain name (+type) — e.g. the header "Book Now" and Services
+  // cards — or a rich item object { name, type, vehicle?, pkg? } from the Fleet /
+  // Packages cards so the modal can render context-specific fields.
+  const openBooking = (itemOrName, type = "vehicle") => {
+    const item =
+      itemOrName && typeof itemOrName === "object"
+        ? { type: "vehicle", ...itemOrName }
+        : { name: itemOrName, type };
+    setSelectedItem(item);
     setIsModalOpen(true);
   };
 
@@ -79,6 +90,10 @@ export default function App() {
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/faqs" element={<FAQ />} />
           <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
         </Routes>
 

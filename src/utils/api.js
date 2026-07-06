@@ -121,7 +121,39 @@ export const deleteBooking = async (id) => {
   return res.json();
 };
 
+// --- Contact / enquiry (public — no auth) ---
+
+/**
+ * Submit the "Contact Us" enquiry. Fires an email to the business inbox and an
+ * acknowledgement to the enquirer (handled server-side via the notification
+ * engine). Returns the server ack; throws on validation/other errors.
+ */
+export const submitEnquiry = async ({ name, email, phone, subject, message }) => {
+  const res = await fetch(`${BASE_URL}/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, phone, subject, message })
+  });
+  if (!res.ok) return throwError(res, "Could not send your message. Please try again.");
+  return res.json();
+};
+
 // --- Payments ---
+
+/**
+ * PREVIEW ONLY (mock gateway). Ask the server for a validly-signed checkout
+ * result so the demo "pay online" flow can complete without a Razorpay account.
+ * The server refuses this unless PAYMENT_PROVIDER=mock and not in production.
+ */
+export const simulateMockCheckout = async (orderId) => {
+  const res = await fetch(`${BASE_URL}/payments/mock/checkout`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ orderId })
+  });
+  if (!res.ok) return throwError(res, "Could not start the test payment");
+  return res.json();
+};
 
 /**
  * Verify a completed checkout with the server. The server re-checks the

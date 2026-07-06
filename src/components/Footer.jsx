@@ -40,10 +40,10 @@ export default function Footer() {
           <h4 className="text-sm font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Company</h4>
           <ul className="space-y-2">
             <li><Link to="/about" className="hover:text-gold transition-colors">About Us</Link></li>
-            <li><Link to="/" className="hover:text-gold transition-colors">Terms of Service</Link></li>
-            <li><Link to="/" className="hover:text-gold transition-colors">Privacy Policy</Link></li>
-            <li><Link to="/" className="hover:text-gold transition-colors">Refund Policy</Link></li>
-            <li><Link to="/" className="hover:text-gold transition-colors">FAQs</Link></li>
+            <li><Link to="/terms" className="hover:text-gold transition-colors">Terms of Service</Link></li>
+            <li><Link to="/privacy" className="hover:text-gold transition-colors">Privacy Policy</Link></li>
+            <li><Link to="/refund" className="hover:text-gold transition-colors">Refund Policy</Link></li>
+            <li><Link to="/faqs" className="hover:text-gold transition-colors">FAQs</Link></li>
           </ul>
         </div>
 
@@ -51,13 +51,17 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Get in Touch</h4>
           <div className="space-y-3">
-            <a href="tel:+919800000000" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
+            <a href="tel:+917338899062" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
               <Phone className="w-4 h-4 text-gold" />
-              <span>+91 98000 00000</span>
+              <span>+91 73388 99062</span>
             </a>
-            <a href="mailto:hello@roadcruise.in" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
+            <a href="tel:+917338899063" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
+              <Phone className="w-4 h-4 text-gold" />
+              <span>+91 73388 99063</span>
+            </a>
+            <a href="mailto:info@roadcruise.in" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
               <Mail className="w-4 h-4 text-gold" />
-              <span>hello@roadcruise.in</span>
+              <span>info@roadcruise.in</span>
             </a>
             <div className="flex items-start gap-2.5 leading-relaxed text-zinc-500 dark:text-zinc-500">
               <MapPin className="w-4 h-4 text-gold mt-0.5 flex-shrink-0" />

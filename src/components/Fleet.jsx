@@ -302,7 +302,7 @@ export default function Fleet({ onBookNowClick }) {
 
                 {/* Actions */}
                 <button
-                  onClick={() => onBookNowClick(vehicle.name, "vehicle")}
+                  onClick={() => onBookNowClick({ name: vehicle.name, type: "vehicle", vehicle })}
                   className="w-full py-3 bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 dark:hover:text-zinc-950 text-zinc-800 dark:text-white text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer"
                 >
                   Book Now

@@ -189,7 +189,7 @@ export default function Packages({ onBookNowClick }) {
                   </div>
 
                   <button
-                    onClick={() => onBookNowClick(pkg.name, "package")}
+                    onClick={() => onBookNowClick({ name: pkg.name, type: "package", pkg })}
                     className="w-full py-3 bg-zinc-950 hover:bg-gold dark:bg-white/5 dark:hover:bg-gold text-white hover:text-zinc-950 dark:text-white dark:hover:text-zinc-950 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer shadow-md"
                   >
                     Book Package
@@ -254,7 +254,7 @@ export default function Packages({ onBookNowClick }) {
                         {tour.seatsLeft} of {tour.totalSeats} seats left
                       </span>
                       <button
-                        onClick={() => onBookNowClick(tour.name, "package")}
+                        onClick={() => onBookNowClick({ name: tour.name, type: "package", pkg: { name: tour.name, price: tour.price, duration: tour.duration, date: tour.date, isGroupTour: true } })}
                         className="px-5 py-2.5 bg-gold hover:bg-gold-hover text-zinc-950 font-bold text-[10px] tracking-wider uppercase rounded-xl active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1"
                       >
                         <span>Reserve Seat</span>
