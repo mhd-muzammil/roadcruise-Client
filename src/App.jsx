@@ -18,6 +18,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
 import FAQ from "./pages/FAQ";
+import MyBookings from "./pages/MyBookings";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -94,6 +95,16 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
           <Route path="/faqs" element={<FAQ />} />
+          <Route
+            path="/my-bookings"
+            element={
+              <MyBookings
+                currentUser={currentUser}
+                onAuthClick={() => setIsAuthOpen(true)}
+                onSessionExpired={handleLogout}
+              />
+            }
+          />
           <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
         </Routes>
 

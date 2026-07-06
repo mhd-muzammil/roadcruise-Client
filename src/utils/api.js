@@ -141,6 +141,20 @@ export const submitEnquiry = async ({ name, email, phone, subject, message }) =>
 // --- Payments ---
 
 /**
+ * Create (or reuse) a payment order for an EXISTING booking — used by the
+ * "Pay Now" button on My Bookings. Returns { payment, checkout, alreadyPaid? }.
+ */
+export const createPaymentOrder = async (bookingId) => {
+  const res = await fetch(`${BASE_URL}/payments/orders`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ bookingId })
+  });
+  if (!res.ok) return throwError(res, "Could not start payment");
+  return res.json();
+};
+
+/**
  * PREVIEW ONLY (mock gateway). Ask the server for a validly-signed checkout
  * result so the demo "pay online" flow can complete without a Razorpay account.
  * The server refuses this unless PAYMENT_PROVIDER=mock and not in production.

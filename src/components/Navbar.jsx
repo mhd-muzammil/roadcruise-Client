@@ -75,6 +75,12 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
                   <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider">Account</p>
                   <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{currentUser.email}</p>
                 </div>
+                <Link
+                  to="/my-bookings"
+                  className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-gold/10 hover:text-gold rounded-lg transition-colors"
+                >
+                  My Bookings
+                </Link>
                 {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
                   <Link
                     to="/admin"
@@ -199,6 +205,13 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
                   Logout
                 </button>
               </div>
+              <Link
+                to="/my-bookings"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full block text-center py-2 bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 rounded-xl text-xs font-bold hover:border-gold hover:text-gold transition-all uppercase tracking-wider"
+              >
+                My Bookings
+              </Link>
               {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
                 <Link
                   to="/admin"
