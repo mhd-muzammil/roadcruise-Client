@@ -1,10 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { Compass, Phone, Menu, X, Sun, Moon } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Compass, Phone, Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
 export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, currentUser, onAuthClick, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  // Close the account menu when clicking outside it or pressing Escape.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDocClick = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setUserMenuOpen(false); };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,40 +79,53 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
           </a>
           
           {currentUser ? (
-            <div className="relative group/user font-sans">
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 text-xs font-semibold hover:border-gold transition-all cursor-pointer">
+            <div className="relative font-sans" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((o) => !o)}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 text-xs font-semibold hover:border-gold transition-all cursor-pointer"
+              >
                 <div className="w-5 h-5 rounded-full bg-gold text-zinc-950 flex items-center justify-center font-bold text-[10px]">
                   {currentUser.name[0].toUpperCase()}
                 </div>
                 <span className="text-zinc-900 dark:text-white max-w-[80px] truncate">{currentUser.name}</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
               </button>
-              
-              <div className="absolute right-0 mt-2 w-40 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/5 shadow-2xl p-1.5 hidden group-hover/user:block hover:block animate-fade-in z-50">
-                <div className="px-3 py-1.5 border-b border-zinc-150 dark:border-white/5 mb-1">
-                  <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider">Account</p>
-                  <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{currentUser.email}</p>
-                </div>
-                <Link
-                  to="/my-bookings"
-                  className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-gold/10 hover:text-gold rounded-lg transition-colors"
+
+              {userMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-44 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/5 shadow-2xl p-1.5 animate-fade-in z-50"
                 >
-                  My Bookings
-                </Link>
-                {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
+                  <div className="px-3 py-1.5 border-b border-zinc-150 dark:border-white/5 mb-1">
+                    <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider">Account</p>
+                    <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{currentUser.email}</p>
+                  </div>
                   <Link
-                    to="/admin"
-                    className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                    to="/my-bookings"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-gold/10 hover:text-gold rounded-lg transition-colors"
                   >
-                    Admin Dashboard
+                    My Bookings
                   </Link>
-                )}
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                >
-                  Sign Out
-                </button>
-              </div>
+                  {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/10 rounded-lg transition-colors"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { setUserMenuOpen(false); onLogout(); }}
+                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
