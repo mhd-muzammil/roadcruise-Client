@@ -110,6 +110,7 @@ export default function App() {
           selectedItem={selectedItem}
           currentUser={currentUser}
           onAuthTrigger={() => setIsAuthOpen(true)}
+          onSessionExpired={handleLogout}
         />
 
         {/* Authentication Modal */}

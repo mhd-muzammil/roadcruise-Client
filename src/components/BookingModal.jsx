@@ -67,7 +67,7 @@ const fieldCls = (hasError, withIcon = true) =>
 const selectCls =
   "w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer transition-all";
 
-export default function BookingModal({ isOpen, onClose, selectedItem, currentUser, onAuthTrigger }) {
+export default function BookingModal({ isOpen, onClose, selectedItem, currentUser, onAuthTrigger, onSessionExpired }) {
   // "auth_prompt" | "form" | "pay" | "mock_pay" | "processing" | "success" | "pending"
   const [step, setStep] = useState("auth_prompt");
   // Holds the mock order details while the simulated (preview) checkout is open.
@@ -163,6 +163,19 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     }
   };
 
+  // A 401 means the stored session is missing/expired/invalid. Clear it and send
+  // the user to sign in again instead of dead-ending at the payment step.
+  const handleBookingError = (err) => {
+    if (err?.status === 401) {
+      onSessionExpired?.();          // clears currentUser + localStorage in App
+      setApiError("Your session has expired. Please sign in again to continue.");
+      setStep("auth_prompt");
+      return;
+    }
+    setApiError(err?.message || "Could not create booking");
+    setStep("pay");
+  };
+
   // Common booking payload built from the form + booking context.
   const buildPayload = (paymentMode) => ({
     name: formData.name,
@@ -202,8 +215,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
       setResult({ booking: res.booking, mode: "arrival" });
       setStep("pending");
     } catch (err) {
-      setApiError(err.message || "Could not create booking");
-      setStep("pay");
+      handleBookingError(err);
     }
   };
 
@@ -219,8 +231,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     try {
       res = await createBooking(buildPayload("online"));
     } catch (err) {
-      setApiError(err.message || "Could not create booking");
-      setStep("pay");
+      handleBookingError(err);
       return;
     }
 
