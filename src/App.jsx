@@ -19,6 +19,7 @@ import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
 import FAQ from "./pages/FAQ";
 import MyBookings from "./pages/MyBookings";
+import ResetPassword from "./pages/ResetPassword";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -105,6 +106,7 @@ export default function App() {
               />
             }
           />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
         </Routes>
 

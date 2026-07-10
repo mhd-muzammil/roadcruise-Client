@@ -52,6 +52,38 @@ export const registerUser = async (name, email, phone, password) => {
   return res.json();
 };
 
+// --- Password recovery (public, rate-limited server-side) ---
+
+/**
+ * Request a password-reset email. The server ALWAYS responds ok (it never
+ * reveals whether the account exists), so callers should show a neutral
+ * "if an account exists, we've sent a link" message regardless.
+ */
+export const requestPasswordReset = async (email) => {
+  const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) return throwError(res, "Could not send the reset link. Please try again.");
+  return res.json();
+};
+
+/**
+ * Complete a password reset using the single-use token from the emailed link.
+ * On success the server revokes all existing sessions, so the user must sign
+ * in again with the new password.
+ */
+export const resetPassword = async ({ email, token, newPassword }) => {
+  const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, token, newPassword })
+  });
+  if (!res.ok) return throwError(res, "Could not reset your password. The link may have expired.");
+  return res.json();
+};
+
 // Fetch public OAuth config (mode + Google client id) for the GIS button.
 export const getGoogleConfig = async () => {
   const res = await fetch(`${BASE_URL}/auth/google/config`);
