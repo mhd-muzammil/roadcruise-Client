@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Users, Shield, Info } from "lucide-react";
+import innovaCrystaImg from "../assets/innova-crysta.webp";
 
 const VEHICLE_CATEGORIES = [
   "All",
@@ -66,7 +67,7 @@ const VEHICLES = [
     name: "Innova Crysta",
     category: "SUVs",
     seats: "7+1",
-    image: "/inova crysta.jfif",
+    image: innovaCrystaImg,
     outstationRate: 22,
     driverBata: 600,
     localPricing: {

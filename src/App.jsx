@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -6,21 +6,22 @@ import BookingModal from "./components/BookingModal";
 import AuthModal from "./components/AuthModal";
 import ScrollToTop from "./components/common/ScrollToTop";
 
-// Page Imports
+// Page Imports — primary landing routes stay eager; the rest are
+// code-split so their JS never blocks first paint of the home page.
 import Home from "./pages/Home";
 import About from "./pages/About";
 import ToursTravels from "./pages/ToursTravels";
 import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
-import Blog from "./pages/Blog";
-import Admin from "./pages/Admin";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Refund from "./pages/Refund";
-import FAQ from "./pages/FAQ";
-import MyBookings from "./pages/MyBookings";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
+const Blog = lazy(() => import("./pages/Blog"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Refund = lazy(() => import("./pages/Refund"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const MyBookings = lazy(() => import("./pages/MyBookings"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -87,6 +88,7 @@ export default function App() {
         />
 
         <main>
+        <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Home onBookNowClick={openBooking} />} />
           <Route path="/about" element={<About />} />
@@ -121,6 +123,7 @@ export default function App() {
               paths) land on Home instead of an empty page. */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
         </main>
 
         {/* Footer Section */}

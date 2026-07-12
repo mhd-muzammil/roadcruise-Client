@@ -10,7 +10,7 @@ const SERVICES_DATA = [
     description: "Travel anywhere in South India with certified professional drivers. Safe, sanitized, GPS-tracked premium sedans & SUVs.",
     price: "₹14/km onwards",
     icon: Milestone,
-    image: "https://img.freepik.com/premium-photo/car-driving-scenic-mountain-road-sunset-with-beautiful-view-landscape-water-distance_260899-5940.jpg",
+    image: "https://img.magnific.com/premium-photo/car-driving-scenic-mountain-road-sunset-with-beautiful-view-landscape-water-distance_260899-5940.jpg",
     actionLabel: "Book Rental",
     exploreLink: "/vehicles",
     type: "vehicle",
