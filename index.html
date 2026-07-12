@@ -9,6 +9,152 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "TravelAgency",
+          "@id": "https://roadcruise-client.vercel.app/#organization",
+          "name": "Road Cruise",
+          "alternateName": "RoadCruise",
+          "slogan": "Where Every Journey Feels Like A Cruise",
+          "url": "https://roadcruise-client.vercel.app/",
+          "telephone": "+91-73388-99062",
+          "email": "info@roadcruise.in",
+          "areaServed": { "@type": "State", "name": "Tamil Nadu" },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Chennai",
+            "addressRegion": "Tamil Nadu",
+            "addressCountry": "IN"
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            "opens": "00:00",
+            "closes": "23:59"
+          },
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "telephone": "+91-73388-99062",
+              "contactType": "customer service",
+              "areaServed": "IN",
+              "availableLanguage": ["en"]
+            },
+            {
+              "@type": "ContactPoint",
+              "telephone": "+91-73388-99063",
+              "contactType": "customer service",
+              "areaServed": "IN",
+              "availableLanguage": ["en"]
+            }
+          ],
+          "priceRange": "₹₹"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://roadcruise-client.vercel.app/#website",
+          "url": "https://roadcruise-client.vercel.app/",
+          "name": "Road Cruise",
+          "publisher": { "@id": "https://roadcruise-client.vercel.app/#organization" }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I book a vehicle or tour package?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Browse our Vehicles or Tours & Travels pages and click \"Book Now\". Fill in your trip details — pickup/drop, dates, passengers — and choose to pay securely online or reserve and pay on arrival. You'll get an instant confirmation by email." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is the fare shown final?",
+              "acceptedAnswer": { "@type": "Answer", "text": "The price shown is an indicative estimate. The final fare depends on distance, duration, tolls, permits and your specific requirements. Our team confirms the exact fare before your trip." }
+            },
+            {
+              "@type": "Question",
+              "name": "What is included and excluded in the fare?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Rates include the vehicle and a professional driver. Toll gate fees, parking, state entry taxes/permits, hill-station charges and driver night allowance (₹200–₹500 for 10 PM–5 AM driving) are charged separately unless a package states otherwise." }
+            },
+            {
+              "@type": "Question",
+              "name": "Which payment methods do you accept?",
+              "acceptedAnswer": { "@type": "Answer", "text": "We accept cards, UPI and net banking through our secure payment gateway, plus pay-on-arrival for eligible bookings. We never store your card details." }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I cancel or reschedule my booking?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. Cancellations are refunded based on how early you cancel (see our Refund Policy). To reschedule, contact us as early as possible and we'll accommodate you subject to availability." }
+            },
+            {
+              "@type": "Question",
+              "name": "Do you provide outstation and multi-day trips?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. We offer local (hourly), one-way drops, round trips, outstation journeys and multi-day tour packages across South India, with a range of vehicles from sedans to mini buses." }
+            },
+            {
+              "@type": "Question",
+              "name": "Are your drivers verified?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. All our drivers are experienced, background-verified professionals, and our GPS-enabled vehicles are regularly cleaned and maintained." }
+            },
+            {
+              "@type": "Question",
+              "name": "How will I receive my booking confirmation?",
+              "acceptedAnswer": { "@type": "Answer", "text": "You'll receive an email confirmation with your booking reference (e.g. RDZ001) as soon as your booking is placed, and another once payment is verified. Our team may also reach you on WhatsApp." }
+            }
+          ]
+        },
+        {
+          "@type": "Service",
+          "serviceType": "Chauffeur-driven vehicle rental",
+          "name": "Road Cruise Premium Fleet",
+          "provider": { "@id": "https://roadcruise-client.vercel.app/#organization" },
+          "areaServed": { "@type": "State", "name": "Tamil Nadu" },
+          "offers": [
+            { "@type": "Offer", "name": "Sedan (Dzire, Aura, Amaze)", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 14, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Any SUV (Ertiga, Marazzo, Kia Carens)", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 18, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Kia Carens", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 20, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Innova Crysta", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 22, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Innova Hycross", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 24, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Urbania 12+1", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 35, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Tempo Traveller 12 A/C", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 24, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Tempo Traveller 18 A/C", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 26, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Mini Bus 21 Seater", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 30, "priceCurrency": "INR", "unitCode": "KMT" } },
+            { "@type": "Offer", "name": "Mini Bus 32 Seater", "priceCurrency": "INR", "priceSpecification": { "@type": "UnitPriceSpecification", "price": 50, "priceCurrency": "INR", "unitCode": "KMT" } }
+          ]
+        },
+        {
+          "@type": "TouristTrip",
+          "name": "Kodaikanal Premium Package",
+          "description": "Escape to the Pristine Hills — 2 Days · 1 Night with 4★ boutique stay, private transport, sightseeing & local guides, complimentary breakfasts.",
+          "provider": { "@id": "https://roadcruise-client.vercel.app/#organization" },
+          "offers": { "@type": "Offer", "priceCurrency": "INR", "price": "4999", "url": "https://roadcruise-client.vercel.app/#/tours-travels" }
+        },
+        {
+          "@type": "TouristTrip",
+          "name": "Kerala Backwaters Cruise",
+          "description": "Unwind on Premium Houseboats — 4 Days · 3 Nights tour package across Kerala's backwaters.",
+          "provider": { "@id": "https://roadcruise-client.vercel.app/#organization" },
+          "offers": { "@type": "Offer", "priceCurrency": "INR", "price": "12999", "url": "https://roadcruise-client.vercel.app/#/tours-travels" }
+        },
+        {
+          "@type": "TouristTrip",
+          "name": "Ooty Tea Garden Retreat",
+          "description": "Ride the Iconic Toy Train — 3 Days · 2 Nights tour package in Ooty's tea gardens.",
+          "provider": { "@id": "https://roadcruise-client.vercel.app/#organization" },
+          "offers": { "@type": "Offer", "priceCurrency": "INR", "price": "6499", "url": "https://roadcruise-client.vercel.app/#/tours-travels" }
+        },
+        {
+          "@type": "TouristTrip",
+          "name": "Coorg Coffee Plantation Trek",
+          "description": "Mist, Waterfalls, & Trekking — 3 Days · 2 Nights tour package in Coorg.",
+          "provider": { "@id": "https://roadcruise-client.vercel.app/#organization" },
+          "offers": { "@type": "Offer", "priceCurrency": "INR", "price": "7999", "url": "https://roadcruise-client.vercel.app/#/tours-travels" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
