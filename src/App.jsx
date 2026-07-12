@@ -20,6 +20,7 @@ import ToursTravels from "./pages/ToursTravels";
 import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
 const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -122,6 +123,7 @@ function AppContent() {
           <Route path="/vehicles" element={<Fleet onBookNowClick={openBooking} />} />
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
