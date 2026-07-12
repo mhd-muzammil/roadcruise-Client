@@ -194,10 +194,10 @@ export default function Fleet({ onBookNowClick }) {
         
         {/* Header */}
         <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
-          <h2 className="text-xs font-semibold tracking-[0.25em] text-gold uppercase">Our Premium Fleet</h2>
-          <p className="text-3xl md:text-4xl font-serif font-bold text-zinc-900 dark:text-white">
+          <p className="text-xs font-semibold tracking-[0.25em] text-gold uppercase">Our Premium Fleet</p>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-zinc-900 dark:text-white">
             A luxury vehicle for every mile ahead.
-          </p>
+          </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light">
             Review our verified, deep-cleaned, GPS-enabled fleet with detailed local package and outstation pricing structures.
           </p>
@@ -230,8 +230,8 @@ export default function Fleet({ onBookNowClick }) {
               {/* Image Showcase */}
               <div className="h-52 overflow-hidden relative bg-zinc-950">
                 <img 
-                  src={vehicle.image} 
-                  alt={vehicle.name}
+                  src={vehicle.image}
+                  alt={`${vehicle.name} — chauffeur-driven rental in Chennai, South India`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                   loading="lazy"
                 />

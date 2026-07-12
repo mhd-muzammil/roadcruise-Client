@@ -115,9 +115,10 @@ export default function Reviews() {
               {/* Reviewer Details */}
               <div className="flex flex-col items-center space-y-3">
                 <div className="relative">
-                  <img 
-                    src={REVIEWS[activeReviewIndex].avatar} 
-                    alt={REVIEWS[activeReviewIndex].name} 
+                  <img
+                    src={REVIEWS[activeReviewIndex].avatar}
+                    alt={`${REVIEWS[activeReviewIndex].name} — Road Cruise customer`}
+                    loading="lazy"
                     className="w-14 h-14 rounded-full border-2 border-gold/30 object-cover shadow-md"
                   />
                   {/* Verified Check Badge */}

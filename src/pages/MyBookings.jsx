@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { fetchBookings } from "../utils/api";
 import { payForBooking } from "../utils/payment";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 // Map a booking status to display metadata.
 const statusMeta = (status) => {
@@ -39,6 +40,7 @@ function Row({ icon: Icon, label, value }) {
 }
 
 export default function MyBookings({ currentUser, onAuthClick, onSessionExpired }) {
+  useDocumentMeta({ title: "My Bookings | Road Cruise", noindex: true });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

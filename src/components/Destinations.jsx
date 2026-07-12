@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Compass, Clock, MapPin, ArrowRight } from "lucide-react";
 
 const DESTINATIONS = [
@@ -90,13 +91,13 @@ export default function Destinations() {
               </span>
             </h2>
           </div>
-          <a 
-            href="#packages"
+          <Link
+            to="/tours-travels"
             className="text-xs font-bold uppercase tracking-wider text-gold hover:text-gold-hover transition-colors flex items-center gap-1.5 group border border-gold/30 px-5 py-2.5 rounded-xl bg-gold/5 hover:bg-gold/10"
           >
             <span>View All Packages</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </a>
+          </Link>
         </div>
 
         {/* Destinations Grid (8 cards) */}

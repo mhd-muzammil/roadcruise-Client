@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { 
   Building, Calendar, Car, ClipboardList, DollarSign, 
   MapPin, Plus, ShieldAlert, ShieldCheck, UserCheck, 
@@ -115,12 +116,12 @@ export default function AdminPanel({ currentUser, onBypassAdmin }) {
             >
               Bypass as Admin
             </button>
-            <a 
-              href="/"
+            <Link
+              to="/"
               className="flex-1 py-3 bg-zinc-200 hover:bg-zinc-300 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-white/5 font-bold rounded-xl text-xs uppercase tracking-wider transition-all text-center flex items-center justify-center"
             >
               Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Milestone, Clock, Palmtree, Users, ArrowRight } from "lucide-react";
 
 const SERVICES_DATA = [
@@ -11,7 +12,7 @@ const SERVICES_DATA = [
     icon: Milestone,
     image: "https://img.freepik.com/premium-photo/car-driving-scenic-mountain-road-sunset-with-beautiful-view-landscape-water-distance_260899-5940.jpg",
     actionLabel: "Book Rental",
-    exploreLink: "#vehicles",
+    exploreLink: "/vehicles",
     type: "vehicle",
     presetName: "Sedan (Dzire, Aura, Amaze)"
   },
@@ -24,7 +25,7 @@ const SERVICES_DATA = [
     icon: Clock,
     image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Hourly",
-    exploreLink: "#vehicles",
+    exploreLink: "/vehicles",
     type: "vehicle",
     presetName: "Sedan (Dzire, Aura, Amaze)"
   },
@@ -37,7 +38,7 @@ const SERVICES_DATA = [
     icon: Palmtree,
     image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Package",
-    exploreLink: "#packages",
+    exploreLink: "/tours-travels",
     type: "package",
     presetName: "Kodaikanal Premium Package"
   },
@@ -50,7 +51,7 @@ const SERVICES_DATA = [
     icon: Users,
     image: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=600",
     actionLabel: "Book Coach",
-    exploreLink: "#vehicles",
+    exploreLink: "/vehicles",
     type: "vehicle",
     presetName: "Urbania 12+1"
   }
@@ -146,13 +147,13 @@ export default function Services({ onBookNowClick }) {
                       {service.actionLabel}
                     </button>
                     
-                    <a
-                      href={service.exploreLink}
+                    <Link
+                      to={service.exploreLink}
                       className="inline-flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-gold dark:hover:text-gold uppercase tracking-wider pl-1.5 transition-colors"
                     >
                       <span>Explore Options</span>
                       <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>

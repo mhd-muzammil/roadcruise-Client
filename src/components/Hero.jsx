@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Award, User, Phone, Calendar, Compass, CheckCircle } from "lucide-react";
 
 export default function Hero({ onBookNowClick }) {
@@ -260,11 +261,11 @@ export default function Hero({ onBookNowClick }) {
         {/* Alternative Links */}
         <div className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
           <span className="hidden sm:inline">Or explore more:</span>
-          <a href="#fleet" className="hover:text-gold transition-colors">View Fleet</a>
+          <Link to="/vehicles" className="hover:text-gold transition-colors">View Fleet</Link>
           <span className="text-zinc-300 dark:text-white/10">•</span>
-          <a href="#packages" className="hover:text-gold transition-colors">Tour Packages</a>
+          <Link to="/tours-travels" className="hover:text-gold transition-colors">Tour Packages</Link>
           <span className="text-zinc-300 dark:text-white/10">•</span>
-          <a href="#contact" className="hover:text-gold transition-colors">Contact Support</a>
+          <Link to="/contact" className="hover:text-gold transition-colors">Contact Support</Link>
         </div>
 
         {/* Trust Badges */}

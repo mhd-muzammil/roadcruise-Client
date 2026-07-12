@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, MessageCircle, Phone } from "lucide-react";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 const FAQS = [
   {
@@ -44,7 +45,7 @@ function FaqItem({ item, isOpen, onToggle }) {
         className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors"
         aria-expanded={isOpen}
       >
-        <span className="text-sm font-semibold text-zinc-900 dark:text-white">{item.q}</span>
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">{item.q}</h2>
         <ChevronDown className={`w-4 h-4 text-gold flex-shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
       </button>
       <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
@@ -57,6 +58,11 @@ function FaqItem({ item, isOpen, onToggle }) {
 }
 
 export default function FAQ() {
+  useDocumentMeta({
+    title: "FAQs – Booking, Fares & Cancellations | Road Cruise",
+    description:
+      "Answers on booking vehicles and tours, fare inclusions, tolls and permits, payments, cancellations and driver verification at Road Cruise.",
+  });
   const [openIndex, setOpenIndex] = useState(0);
 
   return (

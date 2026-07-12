@@ -86,6 +86,7 @@ export default function App() {
           onLogout={handleLogout}
         />
 
+        <main>
         <Routes>
           <Route path="/" element={<Home onBookNowClick={openBooking} />} />
           <Route path="/about" element={<About />} />
@@ -120,6 +121,7 @@ export default function App() {
               paths) land on Home instead of an empty page. */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </main>
 
         {/* Footer Section */}
         <Footer />

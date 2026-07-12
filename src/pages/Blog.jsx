@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Clock, Calendar, User, ArrowRight, X, BookOpen } from "lucide-react";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 const ARTICLES = [
   {
@@ -169,6 +170,11 @@ const ARTICLES = [
 const CATEGORIES = ["All", "Travel Guides", "Road Safety", "Destinations", "Chauffeur Stories"];
 
 export default function Blog() {
+  useDocumentMeta({
+    title: "Travel Blog: South India Road Trip Guides | Road Cruise",
+    description:
+      "Road trip guides, ghat driving safety tips and hidden destinations across South India, written by Road Cruise chauffeurs and travel experts.",
+  });
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedArticle, setSelectedArticle] = useState(null);
 

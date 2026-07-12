@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { resetPassword } from "../utils/api";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 // Mirror the backend password policy (min 8, upper, lower, number, special).
 // The server is the source of truth; this only gives fast inline feedback.
@@ -16,6 +17,7 @@ const validatePolicy = (p) => {
 };
 
 export default function ResetPassword({ onAuthClick }) {
+  useDocumentMeta({ title: "Reset Password | Road Cruise", noindex: true });
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const email = params.get("email") || "";

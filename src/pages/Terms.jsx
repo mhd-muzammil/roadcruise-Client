@@ -1,7 +1,14 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { LegalPage, Section, Bullets } from "../components/common/LegalPage";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 export default function Terms() {
+  useDocumentMeta({
+    title: "Terms of Service | Road Cruise",
+    description:
+      "The terms governing vehicle rental and tour package bookings with Road Cruise — fares, tolls, payments, cancellations and responsibilities.",
+  });
   return (
     <LegalPage
       badge="Legal"
@@ -46,7 +53,7 @@ export default function Terms() {
 
       <Section title="5. Cancellations & Refunds">
         <p>
-          Cancellations and refunds are governed by our <a href="#/refund" className="text-gold hover:underline">Refund Policy</a>.
+          Cancellations and refunds are governed by our <Link to="/refund" className="text-gold hover:underline">Refund Policy</Link>.
           Refund timelines depend on your bank or payment provider.
         </p>
       </Section>

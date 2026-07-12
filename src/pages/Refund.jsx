@@ -1,7 +1,13 @@
 import React from "react";
 import { LegalPage, Section, Bullets } from "../components/common/LegalPage";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 export default function Refund() {
+  useDocumentMeta({
+    title: "Refund & Cancellation Policy | Road Cruise",
+    description:
+      "Cancellation windows and refund timelines for Road Cruise vehicle rentals and tour packages, and how refunds reach your bank.",
+  });
   return (
     <LegalPage
       badge="Legal"

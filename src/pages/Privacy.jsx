@@ -1,7 +1,13 @@
 import React from "react";
 import { LegalPage, Section, Bullets } from "../components/common/LegalPage";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 export default function Privacy() {
+  useDocumentMeta({
+    title: "Privacy Policy | Road Cruise",
+    description:
+      "How Road Cruise collects, uses and protects your personal information when you book vehicles or tour packages with us.",
+  });
   return (
     <LegalPage
       badge="Legal"

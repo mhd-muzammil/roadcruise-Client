@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import Packages from "../components/Packages";
 import Destinations from "../components/Destinations";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 export default function ToursTravels({ onBookNowClick }) {
   const [activeTab, setActiveTab] = useState("packages"); // "packages" | "destinations"
+
+  useDocumentMeta({
+    title: "South India Tour Packages – Ooty, Kodaikanal | Road Cruise",
+    description:
+      "Holiday packages from ₹4,999 — Ooty, Kodaikanal, Coorg, Munnar & Kerala backwaters with private transport, 4-star stays, breakfast and sightseeing.",
+  });
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
@@ -78,18 +85,15 @@ export default function ToursTravels({ onBookNowClick }) {
         </div>
       </div>
 
-      {/* Render Component based on Active Tab */}
+      {/* Both tabs stay mounted so their content is always in the DOM for
+          crawlers; the inactive one is hidden via CSS instead of unmounted. */}
       <div className="transition-all duration-500 ease-in-out">
-        {activeTab === "packages" && (
-          <div className="animate-fade-in">
-            <Packages onBookNowClick={onBookNowClick} />
-          </div>
-        )}
-        {activeTab === "destinations" && (
-          <div className="animate-fade-in">
-            <Destinations />
-          </div>
-        )}
+        <div className={activeTab === "packages" ? "animate-fade-in" : "hidden"}>
+          <Packages onBookNowClick={onBookNowClick} />
+        </div>
+        <div className={activeTab === "destinations" ? "animate-fade-in" : "hidden"}>
+          <Destinations />
+        </div>
       </div>
     </div>
   );

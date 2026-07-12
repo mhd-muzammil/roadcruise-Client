@@ -94,16 +94,16 @@ export default function About() {
                 <span className="text-[10px] tracking-[0.25em] font-semibold text-gold uppercase text-glow-gold">Our Story</span>
               </div>
               
-              <h2 className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white leading-tight">
+              <h1 className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white leading-tight">
                 Crafting road journeys that <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-dark italic font-normal text-glow-gold">
                   feel like a cruise.
                 </span>
-              </h2>
+              </h1>
               
               <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-400 font-light leading-relaxed">
                 <p>
-                  Founded with a vision to redefine travel in South India, **Road Cruise** is more than just a car rental service. We set out to bridge the gap between long hours on the road and ultimate relaxation, designing experiences that match the comfort, luxury, and peace of mind of a premium cruise ship.
+                  Founded with a vision to redefine travel in South India, <strong className="font-semibold">Road Cruise</strong> is more than just a car rental service. We set out to bridge the gap between long hours on the road and ultimate relaxation, designing experiences that match the comfort, luxury, and peace of mind of a premium cruise ship.
                 </p>
                 <p>
                   Whether it is our modern, GPS-monitored fleet, strict speed regulation protocols, or our network of certified professional chauffeurs, every detail is meticulously tailored for the comfort of our clients. Today, we stand proud as a Ministry of Tourism recognized operator, serving thousands of happy holidaymakers, families, and corporate executives.
@@ -167,9 +167,10 @@ export default function About() {
                 className="group relative h-[380px] rounded-3xl overflow-hidden border border-zinc-200 dark:border-white/5 shadow-lg flex flex-col justify-end transition-all duration-500 hover:shadow-2xl hover:border-gold/30 hover:-translate-y-2 cursor-pointer"
               >
                 {/* Background Image */}
-                <img 
-                  src={val.image} 
-                  alt={val.title} 
+                <img
+                  src={val.image}
+                  alt={`Road Cruise chauffeur-driven travel — ${val.title}`}
+                  loading="lazy"
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
                 />
 

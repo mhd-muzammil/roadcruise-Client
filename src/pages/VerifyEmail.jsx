@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { verifyEmail, resendVerification } from "../utils/api";
+import useDocumentMeta from "../hooks/useDocumentMeta";
 
 export default function VerifyEmail({ onAuthClick }) {
+  useDocumentMeta({ title: "Verify Email | Road Cruise", noindex: true });
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const email = params.get("email") || "";
