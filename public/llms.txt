@@ -1,0 +1,69 @@
+# Road Cruise
+
+> Road Cruise is a Ministry of Tourism (Government of India) recognized, ISO 9001:2015 certified premium car rental and tour operator based in Chennai, Tamil Nadu, serving clients throughout South India. Services span outstation chauffeur-driven rentals, hourly local city packages, curated multi-day holiday tours, and group event fleet charters.
+
+## Company
+
+- Brand name: Road Cruise
+- Tagline: "Where Every Journey Feels Like A Cruise"
+- Headquarters: Chennai, Tamil Nadu, India (main hub & vehicle yard)
+- Service area: South India (outstation trips, local city packages, tour destinations across Tamil Nadu, Karnataka, Kerala)
+- Recognition: Ministry of Tourism, Government of India recognized operator; ISO 9001:2015 certified
+- Business hours: Open 24/7/365, including holidays and weekends
+
+## Contact
+
+- Phone: +91 73388 99062 (24/7 helpline), also +91 73388 99063
+- Email: info@roadcruise.in
+- WhatsApp: https://wa.me/917338899062
+- Address: Chennai, Tamil Nadu, India
+
+## Services
+
+- Outstation Journeys — chauffeur-driven trips anywhere in South India, from ₹14/km
+- Local City Packages — hourly rentals (4h/40km, 8h/80km, 12h/120km blocks) for weddings, corporate travel, airport transfers, shopping trips, from ₹1,250
+- Curated Holiday Tours — pre-planned multi-day packages including transport, stays, and sightseeing, from ₹4,999/person
+- Group Event Fleet — Tempo Travellers, Mini Buses, and Urbania coaches for corporate and family groups, GPS & A/C enabled
+
+## Fleet & Pricing (outstation rate per km / seating)
+
+- Sedan (Maruti Suzuki Dzire, Aura, Amaze) — 4+1 seats — ₹14/km — driver bata ₹500/day
+- Any SUV (Ertiga, Marazzo, Kia Carens) — 6+1 seats — ₹18/km — driver bata ₹500/day
+- Kia Carens — 6+1 seats — ₹20/km — driver bata ₹600/day
+- Innova Crysta — 7+1 seats — ₹22/km — driver bata ₹600/day
+- Innova Hycross — 6+1 or 7+1 seats — ₹24/km — driver bata ₹700/day
+- Urbania 12+1 (luxury van) — 12+1 seats — ₹35/km — driver bata ₹1,000/day
+- Tempo Traveller 12 A/C — 12+1 seats — ₹24/km — driver bata ₹800/day
+- Tempo Traveller 18 A/C — 18+1 seats — ₹26/km — driver bata ₹900/day
+- Mini Bus 21 Seater — 21+1 seats — ₹30/km — driver bata ₹1,000/day
+- Mini Bus 32 Seater — 32+1 seats — ₹50/km — driver bata ₹1,200/day
+
+Fares exclude toll gate fees, parking charges, state entry tax/permits, hill-station entry charges. Night driving allowance of ₹200–₹500 applies for 10 PM–5 AM (varies by vehicle).
+
+## Featured Tour Packages
+
+- Kodaikanal Premium Package — 2 Days / 1 Night — ₹4,999/person — 4★ boutique stay, private transport, sightseeing, breakfast included
+- Ooty Tea Garden Retreat — 3 Days / 2 Nights — ₹6,499/person — boutique estate resort, Toy Train first-class tickets, tea estate sightseeing
+- Coorg Coffee Plantation Trek — 3 Days / 2 Nights — ₹7,999/person — heritage plantation homestay, waterfall sightseeing, guided trek
+- Kerala Backwaters Cruise — 4 Days / 3 Nights — ₹12,999/person — premium houseboat stay, all meals, Alleppey & Kumarakom tours, Cochin airport pickup
+
+## FAQ
+
+- How do I book a vehicle or tour package? Browse the Vehicles or Tours & Travels pages, click "Book Now", fill trip details (pickup/drop, dates, passengers), pay online or reserve pay-on-arrival; instant email confirmation follows.
+- Is the fare shown final? The displayed price is an indicative estimate; final fare depends on distance, duration, tolls, permits, and requirements, confirmed by the team before travel.
+- What's included/excluded in the fare? Rates include vehicle and driver. Toll, parking, state entry tax/permits, hill-station charges, and driver night allowance (₹200–₹500 for 10 PM–5 AM) are extra unless stated otherwise.
+- Which payment methods are accepted? Cards, UPI, net banking via secure gateway, plus pay-on-arrival for eligible bookings; card details are never stored.
+- Can bookings be cancelled or rescheduled? Yes — cancellation refunds depend on how early you cancel (per Refund Policy); rescheduling is accommodated subject to availability.
+- Do you offer outstation and multi-day trips? Yes — local hourly, one-way drops, round trips, outstation journeys, and multi-day tour packages across South India, sedans to mini buses.
+- Are drivers verified? Yes — all drivers are experienced and background-verified; vehicles are GPS-enabled and regularly cleaned/maintained.
+- How is booking confirmation sent? Email confirmation with a booking reference (e.g. RDZ001) is sent immediately, with a second confirmation once payment is verified; the team may also follow up on WhatsApp.
+
+## Pages
+
+- Home: https://roadcruise-client.vercel.app/
+- Vehicles/Fleet: https://roadcruise-client.vercel.app/#/vehicles
+- Tours & Travels: https://roadcruise-client.vercel.app/#/tours-travels
+- About: https://roadcruise-client.vercel.app/#/about
+- FAQs: https://roadcruise-client.vercel.app/#/faqs
+- Contact: https://roadcruise-client.vercel.app/#/contact
+- Blog: https://roadcruise-client.vercel.app/#/blog
