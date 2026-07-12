@@ -84,6 +84,33 @@ export const resetPassword = async ({ email, token, newPassword }) => {
   return res.json();
 };
 
+/**
+ * Verify an email address using the single-use token from the emailed link.
+ */
+export const verifyEmail = async ({ email, token }) => {
+  const res = await fetch(`${BASE_URL}/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, token })
+  });
+  if (!res.ok) return throwError(res, "Could not verify your email. The link may have expired.");
+  return res.json();
+};
+
+/**
+ * Request a fresh verification email. Always acknowledged generically — the
+ * server never reveals whether the account exists or is already verified.
+ */
+export const resendVerification = async (email) => {
+  const res = await fetch(`${BASE_URL}/auth/resend-verification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) return throwError(res, "Could not send the verification email. Please try again.");
+  return res.json();
+};
+
 // Fetch public OAuth config (mode + Google client id) for the GIS button.
 export const getGoogleConfig = async () => {
   const res = await fetch(`${BASE_URL}/auth/google/config`);

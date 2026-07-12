@@ -15,7 +15,7 @@ const validatePolicy = (p) => {
   return "";
 };
 
-export default function ResetPassword() {
+export default function ResetPassword({ onAuthClick }) {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const email = params.get("email") || "";
@@ -79,7 +79,11 @@ export default function ResetPassword() {
             </p>
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => {
+                // Leave the consumed link behind (replace) and open the sign-in modal.
+                navigate("/", { replace: true });
+                onAuthClick?.();
+              }}
               className="mt-6 w-full bg-gradient-to-r from-gold via-gold-hover to-gold hover:opacity-90 text-zinc-950 font-bold py-3 rounded-xl text-sm tracking-wider uppercase shadow-lg shadow-gold/15 active:scale-[0.98] transition-all cursor-pointer"
             >
               Continue to Sign In
@@ -104,7 +108,7 @@ export default function ResetPassword() {
 
               {/* New password */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="reset-new-password" className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
                   New Password
                 </label>
                 <div className="relative">
@@ -112,7 +116,9 @@ export default function ResetPassword() {
                     <Lock className="w-4 h-4" />
                   </span>
                   <input
+                    id="reset-new-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
@@ -126,6 +132,7 @@ export default function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-gold"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -142,7 +149,7 @@ export default function ResetPassword() {
 
               {/* Confirm password */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label htmlFor="reset-confirm-password" className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -150,7 +157,9 @@ export default function ResetPassword() {
                     <Lock className="w-4 h-4" />
                   </span>
                   <input
+                    id="reset-confirm-password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     value={confirm}
                     onChange={(e) => {
                       setConfirm(e.target.value);

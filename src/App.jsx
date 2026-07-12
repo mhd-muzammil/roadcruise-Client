@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import BookingModal from "./components/BookingModal";
@@ -20,6 +20,7 @@ import Refund from "./pages/Refund";
 import FAQ from "./pages/FAQ";
 import MyBookings from "./pages/MyBookings";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -106,8 +107,18 @@ export default function App() {
               />
             }
           />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route
+            path="/reset-password"
+            element={<ResetPassword onAuthClick={() => setIsAuthOpen(true)} />}
+          />
+          <Route
+            path="/verify-email"
+            element={<VerifyEmail onAuthClick={() => setIsAuthOpen(true)} />}
+          />
           <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
+          {/* Unknown hash routes (typo'd or truncated emailed links, retired
+              paths) land on Home instead of an empty page. */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
         {/* Footer Section */}
