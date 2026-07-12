@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { X, Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { loginUser, registerUser, requestPasswordReset } from "../utils/api";
 import GoogleSignInButton from "./common/GoogleSignInButton";
@@ -40,6 +40,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setResetSent(false);
     }
   }, [isOpen]);
+
+  // Stable identity: passed to GoogleSignInButton, whose init effect depends on
+  // it. An inline arrow here would change every render (i.e. every keystroke),
+  // re-running that effect and re-rendering the Google iframe — which makes the
+  // whole modal jitter while typing.
+  const handleGoogleError = useCallback((msg) => setErrors({ general: msg }), []);
 
   if (!isOpen) return null;
 
@@ -365,7 +371,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             <GoogleSignInButton
               onAuthSuccess={onAuthSuccess}
               onClose={onClose}
-              onError={(msg) => setErrors({ general: msg })}
+              onError={handleGoogleError}
             />
           )}
 
