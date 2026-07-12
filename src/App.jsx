@@ -1,5 +1,11 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect, lazy, Suspense } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import BookingModal from "./components/BookingModal";
@@ -24,6 +30,16 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 
 export default function App() {
+  // Router must wrap the tree so AppContent can use navigation hooks.
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}
+
+function AppContent() {
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -43,6 +59,17 @@ export default function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
+  // Backward-compatibility shim for the old HashRouter URLs. Links that were
+  // already emailed or bookmarked as `/#/route?params` (reset-password and
+  // verify-email tokens, shared page links) are rewritten once to the clean
+  // BrowserRouter path, preserving the query string and tokens verbatim.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#/")) {
+      navigate(hash.slice(1), { replace: true });
+    }
+  }, [navigate]);
 
   // Accepts either a plain name (+type) — e.g. the header "Book Now" and Services
   // cards — or a rich item object { name, type, vehicle?, pkg? } from the Fleet /
@@ -64,7 +91,7 @@ export default function App() {
     setCurrentUser(user);
     localStorage.setItem("rc_user", JSON.stringify(user));
     if (user.role === "admin") {
-      window.location.hash = "#/admin";
+      navigate("/admin");
     }
   };
 
@@ -74,7 +101,7 @@ export default function App() {
   };
 
   return (
-    <Router>
+    <>
       <ScrollToTop />
       <div className="min-h-screen bg-zinc-50 dark:bg-bg-dark text-zinc-900 dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden transition-colors duration-300">
         {/* Sticky Luxury Navbar */}
@@ -119,7 +146,7 @@ export default function App() {
             element={<VerifyEmail onAuthClick={() => setIsAuthOpen(true)} />}
           />
           <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
-          {/* Unknown hash routes (typo'd or truncated emailed links, retired
+          {/* Unknown paths (typo'd or truncated emailed links, retired
               paths) land on Home instead of an empty page. */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -149,6 +176,6 @@ export default function App() {
           onAuthSuccess={handleAuthSuccess}
         />
       </div>
-    </Router>
+    </>
   );
 }

@@ -4,7 +4,7 @@ const DEFAULT_TITLE = "Road Cruise — Where Every Journey Feels Like A Cruise";
 const DEFAULT_DESCRIPTION =
   "Chauffeur-driven car rentals from ₹14/km and curated tour packages across South India. GPS-tracked fleet, verified drivers, 24/7 support. Book online.";
 
-// Per-route <head> management without a dependency. HashRouter serves every
+// Per-route <head> management without a dependency. The SPA serves every
 // route from the same document, so title/description/robots are swapped on
 // mount and restored to the site defaults on unmount.
 export default function useDocumentMeta({ title, description, noindex = false } = {}) {
