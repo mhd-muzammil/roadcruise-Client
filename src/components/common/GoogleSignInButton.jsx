@@ -50,6 +50,7 @@ export default function GoogleSignInButton({ onAuthSuccess, onError, onClose }) 
         await loadGsi();
         if (cancelled) return;
         const { nonce } = await getAuthNonce();
+        if (cancelled) return;
         nonceRef.current = nonce;
         window.google.accounts.id.initialize({
           client_id: cfg.clientId,
@@ -65,15 +66,6 @@ export default function GoogleSignInButton({ onAuthSuccess, onError, onClose }) 
             }
           },
         });
-        if (btnRef.current) {
-          window.google.accounts.id.renderButton(btnRef.current, {
-            theme: "filled_black",
-            size: "large",
-            text: "continue_with",
-            shape: "pill",
-            width: 320,
-          });
-        }
         setMode("ready");
       } catch {
         if (!cancelled) setMode("error");
@@ -83,6 +75,21 @@ export default function GoogleSignInButton({ onAuthSuccess, onError, onClose }) 
       cancelled = true;
     };
   }, [onAuthSuccess, onError, onClose]);
+
+  // The GIS target <div> only mounts once mode is "ready", so the button must
+  // be rendered AFTER that commit. Calling renderButton inside the init effect
+  // finds btnRef.current still null and silently renders nothing (the empty
+  // "OR" slot) — it only ever worked when a re-render re-ran the effect.
+  useEffect(() => {
+    if (mode !== "ready" || !btnRef.current) return;
+    window.google.accounts.id.renderButton(btnRef.current, {
+      theme: "filled_black",
+      size: "large",
+      text: "continue_with",
+      shape: "pill",
+      width: 320,
+    });
+  }, [mode]);
 
   return (
     <div className="mt-4">
