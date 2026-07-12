@@ -8,6 +8,7 @@ export default function Terms() {
     title: "Terms of Service | Road Cruise",
     description:
       "The terms governing vehicle rental and tour package bookings with Road Cruise — fares, tolls, payments, cancellations and responsibilities.",
+    canonical: "/terms",
   });
   return (
     <LegalPage

@@ -7,6 +7,7 @@ export default function Refund() {
     title: "Refund & Cancellation Policy | Road Cruise",
     description:
       "Cancellation windows and refund timelines for Road Cruise vehicle rentals and tour packages, and how refunds reach your bank.",
+    canonical: "/refund",
   });
   return (
     <LegalPage

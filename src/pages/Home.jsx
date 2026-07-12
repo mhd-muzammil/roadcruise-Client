@@ -11,6 +11,7 @@ export default function Home({ onBookNowClick }) {
     title: "Road Cruise | Car Rentals & Tours in Chennai, South India",
     description:
       "Chauffeur-driven car rentals from ₹14/km and curated tour packages across South India. GPS-tracked fleet, verified drivers, 24/7 support. Book online.",
+    canonical: "/",
   });
   return (
     <>

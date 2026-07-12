@@ -62,6 +62,7 @@ export default function FAQ() {
     title: "FAQs – Booking, Fares & Cancellations | Road Cruise",
     description:
       "Answers on booking vehicles and tours, fare inclusions, tolls and permits, payments, cancellations and driver verification at Road Cruise.",
+    canonical: "/faqs",
   });
   const [openIndex, setOpenIndex] = useState(0);
 

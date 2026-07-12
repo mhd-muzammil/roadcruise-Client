@@ -8,6 +8,7 @@ export default function About() {
     title: "About Road Cruise | Govt. Recognized Travel Company",
     description:
       "Ministry of Tourism recognized, ISO 9001:2015 certified car rental & tour operator in Chennai. 25+ premium vehicles, 10,000+ happy travellers.",
+    canonical: "/about",
   });
   return (
     <>

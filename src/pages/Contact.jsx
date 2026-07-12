@@ -18,6 +18,7 @@ export default function Contact() {
     title: "Contact Road Cruise | Cab & Tour Booking in Chennai",
     description:
       "Reach Road Cruise on +91 73388 99062, WhatsApp or email for car rental and tour bookings in Chennai. 24/7 helpline — we reply within hours.",
+    canonical: "/contact",
   });
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", subject: "General Enquiry", message: "",

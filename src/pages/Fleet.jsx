@@ -7,6 +7,7 @@ export default function Fleet({ onBookNowClick }) {
     title: "Car, Tempo Traveller & Bus Rental in Chennai | Road Cruise",
     description:
       "Rent chauffeur-driven sedans, Innova Crysta, tempo travellers & mini buses in Chennai. Outstation from ₹14/km, local packages from ₹1,250.",
+    canonical: "/vehicles",
   });
   return <FleetComponent onBookNowClick={onBookNowClick} />;
 }

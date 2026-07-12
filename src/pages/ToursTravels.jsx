@@ -10,6 +10,7 @@ export default function ToursTravels({ onBookNowClick }) {
     title: "South India Tour Packages – Ooty, Kodaikanal | Road Cruise",
     description:
       "Holiday packages from ₹4,999 — Ooty, Kodaikanal, Coorg, Munnar & Kerala backwaters with private transport, 4-star stays, breakfast and sightseeing.",
+    canonical: "/tours-travels",
   });
 
   return (

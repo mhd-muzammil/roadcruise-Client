@@ -1,13 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The app currently uses hash-based routing (/#/...): fragment URLs are not
-     valid sitemap entries, so only the root document is listed. When the app
-     migrates to path-based routing (BrowserRouter), list every public route
-     here (/about, /vehicles, /tours-travels, /blog, /contact, /faqs, /terms,
-     /privacy, /refund) and update the domain if a custom domain goes live. -->
+<!-- Public, indexable routes only. Private/auth routes (/admin, /my-bookings,
+     /reset-password, /verify-email) are intentionally excluded and are marked
+     noindex in the app. Keep the origin in sync with src/config/site.js. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://roadcruise-client.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/vehicles</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/tours-travels</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/faqs</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/refund</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/nilgiri-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/ghat-road-safety</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/coorg-waterfalls</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/chauffeur-life</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/east-coast-road</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/munnar-tea-valleys</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://roadcruise-client.vercel.app/blog/iso-tourism-safety</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>
