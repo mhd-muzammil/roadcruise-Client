@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The app currently uses hash-based routing (/#/...): fragment URLs are not
+     valid sitemap entries, so only the root document is listed. When the app
+     migrates to path-based routing (BrowserRouter), list every public route
+     here (/about, /vehicles, /tours-travels, /blog, /contact, /faqs, /terms,
+     /privacy, /refund) and update the domain if a custom domain goes live. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://roadcruise-client.vercel.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
