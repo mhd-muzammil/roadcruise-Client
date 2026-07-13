@@ -16,10 +16,10 @@ export default function Home({ onBookNowClick }) {
   return (
     <>
       <Hero onBookNowClick={onBookNowClick} />
+      <Recognition />
       <Services onBookNowClick={onBookNowClick} />
       <Stories />
       <Reviews />
-      <Recognition />
     </>
   );
 }

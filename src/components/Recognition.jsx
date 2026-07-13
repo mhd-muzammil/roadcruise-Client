@@ -8,7 +8,7 @@ export default function Recognition() {
   return (
     <section
       aria-label="Government recognitions"
-      className="py-12 bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300"
+      className="pt-12 pb-4 bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300"
     >
       <div className="max-w-5xl mx-auto px-6">
         <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400 mb-6">
