@@ -11,6 +11,7 @@ import Footer from "./components/Footer";
 import BookingModal from "./components/BookingModal";
 import AuthModal from "./components/AuthModal";
 import ScrollToTop from "./components/common/ScrollToTop";
+import FloatingContact from "./components/common/FloatingContact";
 
 // Page Imports — primary landing routes stay eager; the rest are
 // code-split so their JS never blocks first paint of the home page.
@@ -157,6 +158,9 @@ function AppContent() {
 
         {/* Footer Section */}
         <Footer />
+
+        {/* Floating WhatsApp + SMS quick-contact buttons (all pages) */}
+        <FloatingContact />
 
         {/* Luxury Booking Dialog Modal */}
         <BookingModal
