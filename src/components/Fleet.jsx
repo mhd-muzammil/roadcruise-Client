@@ -72,7 +72,7 @@ const VEHICLES = [
     driverBata: 600,
     localPricing: {
       fourHours: 2000,
-      eightHours: 1, // TEMP: ₹1 to test a real live payment — REVERT to 4000 after
+      eightHours: 4000,
       twelveHours: 5900,
       extraKm: 33,
       extraHr: 450,
