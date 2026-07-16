@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Compass, Phone, Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
+import { Phone, Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
 export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, currentUser, onAuthClick, onLogout }) {
@@ -45,9 +45,11 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-full border border-gold/40 flex items-center justify-center bg-gold/5 group-hover:border-gold transition-all duration-300">
-            <Compass className="w-5 h-5 text-gold group-hover:rotate-45 transition-transform duration-500" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Road Cruise"
+            className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+          />
           <div>
             <span className="font-serif text-xl font-bold tracking-widest text-zinc-900 dark:text-white group-hover:text-gold transition-colors duration-300">
               ROAD CRUISE
