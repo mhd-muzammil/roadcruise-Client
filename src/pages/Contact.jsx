@@ -17,7 +17,7 @@ export default function Contact() {
   useDocumentMeta({
     title: "Contact Road Cruise | Cab & Tour Booking in Chennai",
     description:
-      "Reach Road Cruise on +91 73388 99062, WhatsApp or email for car rental and tour bookings in Chennai. 24/7 helpline — we reply within hours.",
+      "Reach Road Cruise on +91 88867 67467, WhatsApp or email for car rental and tour bookings in Chennai. 24/7 helpline — we reply within hours.",
     canonical: "/contact",
   });
   const [formData, setFormData] = useState({
@@ -70,7 +70,7 @@ export default function Contact() {
 
   const CONTACT_CARDS = [
     {
-      icon: Phone, label: "Phone", value: "+91 73388 99062", href: "tel:+917338899062",
+      icon: Phone, label: "Phone", value: "+91 88867 67467", href: "tel:+918886767467",
       sub: "Also +91 73388 99063 · 24/7 helpline",
     },
     {
@@ -78,7 +78,7 @@ export default function Contact() {
       sub: "Enquiries & support",
     },
     {
-      icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/917338899062",
+      icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/918886767467",
       sub: "Fastest response",
     },
     {

@@ -70,7 +70,7 @@ export default function Privacy() {
       <Section title="7. Contact">
         <p>
           For any privacy request or question, email <a href="mailto:info@roadcruise.in" className="text-gold hover:underline">info@roadcruise.in</a> or
-          call <a href="tel:+917338899062" className="text-gold hover:underline">+91 73388 99062</a>.
+          call <a href="tel:+918886767467" className="text-gold hover:underline">+91 88867 67467</a>.
         </p>
       </Section>
     </LegalPage>

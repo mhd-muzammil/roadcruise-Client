@@ -58,7 +58,7 @@ export default function Refund() {
         <p>
           Share your booking reference (for example, RDZ001) along with your request by email at
           {" "}<a href="mailto:info@roadcruise.in" className="text-gold hover:underline">info@roadcruise.in</a> or
-          call <a href="tel:+917338899062" className="text-gold hover:underline">+91 73388 99062</a> / <a href="tel:+917338899063" className="text-gold hover:underline">+91 73388 99063</a>.
+          call <a href="tel:+918886767467" className="text-gold hover:underline">+91 88867 67467</a> / <a href="tel:+917338899063" className="text-gold hover:underline">+91 73388 99063</a>.
           Our team is available 24/7.
         </p>
       </Section>

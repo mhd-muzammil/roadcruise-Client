@@ -6,8 +6,8 @@ import { MessageSquareText } from "lucide-react";
  * and both buttons update. Opens WhatsApp chat (wa.me) and the native SMS
  * composer, each with a friendly prefilled message.
  */
-const PHONE_WA = "917338899062"; // E.164 without "+" — required by wa.me
-const PHONE_TEL = "+917338899062"; // with "+" — for the sms: scheme
+const PHONE_WA = "918886767467"; // E.164 without "+" — required by wa.me
+const PHONE_TEL = "+918886767467"; // with "+" — for the sms: scheme
 const PREFILL = "Hi Road Cruise, I'd like to know more about your services.";
 
 const waHref = `https://wa.me/${PHONE_WA}?text=${encodeURIComponent(PREFILL)}`;

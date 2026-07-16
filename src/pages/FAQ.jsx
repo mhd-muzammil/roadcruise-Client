@@ -94,10 +94,10 @@ export default function FAQ() {
           <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white">Still have questions?</h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light">Our team is available 24/7 to help you plan the perfect trip.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-            <a href="tel:+917338899062" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-zinc-950 text-xs font-bold uppercase tracking-wider hover:bg-gold-hover transition-all">
+            <a href="tel:+918886767467" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold text-zinc-950 text-xs font-bold uppercase tracking-wider hover:bg-gold-hover transition-all">
               <Phone className="w-3.5 h-3.5" /> Call Us
             </a>
-            <a href="https://wa.me/917338899062" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider hover:border-gold hover:text-gold transition-all">
+            <a href="https://wa.me/918886767467" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider hover:border-gold hover:text-gold transition-all">
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </a>
           </div>

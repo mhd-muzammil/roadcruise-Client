@@ -51,9 +51,9 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Get in Touch</h4>
           <div className="space-y-3">
-            <a href="tel:+917338899062" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
+            <a href="tel:+918886767467" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
               <Phone className="w-4 h-4 text-gold" />
-              <span>+91 73388 99062</span>
+              <span>+91 88867 67467</span>
             </a>
             <a href="tel:+917338899063" className="flex items-center gap-2.5 hover:text-gold transition-colors w-max">
               <Phone className="w-4 h-4 text-gold" />
