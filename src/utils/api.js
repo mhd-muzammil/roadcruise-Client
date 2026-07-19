@@ -242,3 +242,30 @@ export const verifyPayment = async ({ orderId, paymentId, signature }) => {
   if (!res.ok) return throwError(res, "Payment verification failed");
   return res.json();
 };
+
+// --- Reviews (public — no auth) ---
+
+/**
+ * Fetch approved customer reviews, newest first (server caps at 50).
+ * Returns an array of { id, name, role, rating, text, avatar, createdAt }.
+ */
+export const getReviews = async () => {
+  const res = await fetch(`${BASE_URL}/reviews`);
+  if (!res.ok) return throwError(res, "Failed to load reviews");
+  return res.json();
+};
+
+/**
+ * Submit a guest review: { name, role?, rating (1-5), text (10-600 chars) }.
+ * The server validates, strips HTML, rejects links, and rate-limits per IP.
+ * Returns { review } — the sanitized review as stored.
+ */
+export const submitReview = async ({ name, role, rating, text }) => {
+  const res = await fetch(`${BASE_URL}/reviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, role, rating, text })
+  });
+  if (!res.ok) return throwError(res, "Could not submit your review. Please try again.");
+  return res.json();
+};

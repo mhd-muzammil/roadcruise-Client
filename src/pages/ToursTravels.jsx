@@ -18,7 +18,7 @@ export default function ToursTravels({ onBookNowClick }) {
       {/* Page Header with Video Background */}
       <div className="relative min-h-screen flex items-center justify-center pt-32 pb-20 overflow-hidden border-b border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-950">
         {/* Background Overlay */}
-        <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/85 via-zinc-100/95 to-zinc-50 dark:from-zinc-950/80 dark:via-zinc-950/90 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
+        <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/50 via-zinc-100/75 to-zinc-50/90 dark:from-zinc-950/80 dark:via-zinc-950/90 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
 
         {/* Cinematic Vignette */}
         <div className="absolute inset-0 cinematic-vignette z-15 pointer-events-none opacity-30 dark:opacity-90"></div>
@@ -30,7 +30,7 @@ export default function ToursTravels({ onBookNowClick }) {
             loop
             muted
             playsInline
-            className="w-full h-full object-cover opacity-15 dark:opacity-100 transition-opacity duration-500"
+            className="w-full h-full object-cover opacity-30 dark:opacity-100 transition-opacity duration-500"
           >
             <source 
               src="https://www.pexels.com/download/video/29626345/" 
@@ -48,13 +48,13 @@ export default function ToursTravels({ onBookNowClick }) {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-zinc-900 dark:text-white leading-tight tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-zinc-900 leading-tight tracking-tight">
             Crafting <br className="sm:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-gold-hover to-gold italic font-normal text-glow-gold ml-0 sm:ml-2">
               Extraordinary Journeys
             </span>
           </h1>
-          <p className="text-base md:text-lg max-w-3xl mx-auto text-zinc-700 dark:text-zinc-100 font-normal leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+          <p className="text-base md:text-lg max-w-3xl mx-auto text-zinc-700 font-normal leading-relaxed">
             Explore our curated holiday packages or select beautiful travel destinations for your next premium getaway.
           </p>
 

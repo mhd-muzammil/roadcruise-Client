@@ -4,6 +4,9 @@ import {
   CreditCard, Banknote, MapPin, Users, Car, Package as PackageIcon,
 } from "lucide-react";
 import { createBooking, verifyPayment, simulateMockCheckout } from "../utils/api";
+import {
+  VEHICLE_OPTIONS, NO_PREFERENCE, vehicleOptionText, findVehicleByName, findVehicleByValue,
+} from "../data/vehicles";
 
 // Dynamically load Razorpay's hosted checkout (only when needed). The hosted
 // widget handles card/UPI/netbanking securely — no raw card data ever touches
@@ -20,21 +23,43 @@ function loadRazorpay() {
   });
 }
 
-// Preferred-vehicle options offered on the package form.
-const VEHICLE_PREFERENCES = [
-  "No preference (recommend for me)",
-  "Sedan (Dzire, Aura, Amaze)",
-  "SUV (Ertiga, Carens, Marazzo)",
-  "Innova Crysta / Hycross",
-  "Tempo Traveller",
-  "Mini Bus",
-];
-
 // Pull a positive integer rupee amount out of a display price like "4,999".
 const parsePrice = (p) => {
   const n = Number(String(p ?? "").replace(/[^\d.]/g, ""));
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 };
+
+// "2026-08-14" -> "14 Aug 2026" (falls back to the raw value if unparseable).
+const fmtDate = (d) => {
+  if (!d) return "";
+  const dt = new Date(`${d}T00:00:00`);
+  return Number.isNaN(dt.getTime())
+    ? d
+    : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+};
+
+// Initial dropdown value: a fleet-card booking preselects that vehicle (as its
+// price-labeled option); general/package bookings start at "No preference".
+const defaultVehiclePref = (mode, itemName) => {
+  if (mode === "vehicle") {
+    const match = findVehicleByName(itemName);
+    if (match) return vehicleOptionText(match);
+    if (itemName) return itemName; // unknown fleet name — keep it verbatim
+  }
+  return NO_PREFERENCE;
+};
+
+// One label/value line on the confirmation summary. Renders nothing when the
+// value is empty so optional fields (notes, pickup time…) simply disappear.
+function SummaryRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+      <span className="text-[10px] uppercase tracking-wider text-zinc-500 pt-0.5 whitespace-nowrap">{label}</span>
+      <span className="text-sm font-medium text-zinc-900 text-right wrap-break-word min-w-0">{value}</span>
+    </div>
+  );
+}
 
 // Small presentational field wrapper (label + optional leading icon + error).
 function Field({ label, error, icon: Icon, children, hint }) {
@@ -68,7 +93,7 @@ const selectCls =
   "w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer transition-all";
 
 export default function BookingModal({ isOpen, onClose, selectedItem, currentUser, onAuthTrigger, onSessionExpired }) {
-  // "auth_prompt" | "form" | "pay" | "mock_pay" | "processing" | "success" | "pending"
+  // "auth_prompt" | "form" | "confirm" | "pay" | "mock_pay" | "processing" | "success" | "pending"
   const [step, setStep] = useState("auth_prompt");
   // Holds the mock order details while the simulated (preview) checkout is open.
   const [mockCheckout, setMockCheckout] = useState(null); // { orderId, booking }
@@ -80,21 +105,25 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   const vehicleMeta = selectedItem?.vehicle || null;
   const packageMeta = selectedItem?.pkg || null;
 
-  // Indicative fare — the team confirms the final amount. Vehicle bookings use
-  // the 8h local-package rate as a sensible estimate; packages use the listed
-  // price; the general enquiry uses a flat base estimate.
-  const fare =
-    mode === "package"
-      ? parsePrice(packageMeta?.price) || 4800
-      : mode === "vehicle"
-      ? parsePrice(vehicleMeta?.localPricing?.eightHours) || 2500
-      : 2500;
-
   const [formData, setFormData] = useState({
     name: "", phone: "", pickup: "", drop: "",
     fromDate: "", toDate: "", tripType: "Round-trip",
-    passengers: "", pickupTime: "", vehiclePreference: VEHICLE_PREFERENCES[0], notes: "",
+    passengers: "", pickupTime: "", vehiclePreference: defaultVehiclePref(mode, selectedItem?.name), notes: "",
   });
+
+  // The vehicle currently chosen in the dropdown (null for "No preference" or
+  // an unknown verbatim name).
+  const selectedVehicle = findVehicleByValue(formData.vehiclePreference);
+
+  // Indicative fare — the team confirms the final amount. Packages keep the
+  // listed package price; otherwise the chosen vehicle's 8h local-package rate
+  // is the estimate, falling back to the fleet card's rate or a flat base.
+  const fare =
+    mode === "package"
+      ? parsePrice(packageMeta?.price) || 4800
+      : selectedVehicle?.eightHours ||
+        parsePrice(vehicleMeta?.localPricing?.eightHours) ||
+        2500;
   const [errors, setErrors] = useState({});
   const [processingStatus, setProcessingStatus] = useState("Opening secure payment…");
   const [result, setResult] = useState(null); // { booking, mode }
@@ -113,7 +142,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
       tripType: mode === "package" ? "Tour Package" : "Round-trip",
       passengers: "",
       pickupTime: "",
-      vehiclePreference: VEHICLE_PREFERENCES[0],
+      vehiclePreference: defaultVehiclePref(mode, selectedItem?.name),
       notes: "",
     });
     setErrors({});
@@ -159,7 +188,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     e.preventDefault();
     if (validateForm()) {
       setApiError("");
-      setStep("pay");
+      setStep("confirm"); // review everything before choosing how to pay
     }
   };
 
@@ -187,14 +216,10 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     category: mode,
     pickup: formData.pickup,
     drop: mode === "package" ? "" : formData.drop,
-    // For a vehicle booking the chosen vehicle IS the item; for a package it's
-    // the customer's preferred vehicle; general enquiries leave it blank.
-    vehicle:
-      mode === "vehicle"
-        ? selectedItem?.name || ""
-        : mode === "package"
-        ? formData.vehiclePreference
-        : "",
+    // The vehicle chosen in the dropdown, WITH its price label (e.g.
+    // "Sedan (Dzire, Aura, Amaze) — ₹14/km"), for every booking mode — the
+    // server persists it verbatim and the notification emails render it.
+    vehicle: formData.vehiclePreference || "",
     packageName: mode === "package" ? selectedItem?.name || "" : "",
     passengers: formData.passengers,
     pickupTime: formData.pickupTime,
@@ -328,6 +353,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   const headerTitle = {
     auth_prompt: "Authentication Required",
     form: mode === "package" ? "Book Your Package" : mode === "vehicle" ? "Book This Vehicle" : "Book Your Journey",
+    confirm: "Review Your Trip",
     pay: "Choose Payment",
     mock_pay: "Secure Payment (Test Mode)",
     processing: "Please Wait",
@@ -466,14 +492,32 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 </Field>
               </div>
 
-              {/* Vehicle preference (packages only) */}
-              {mode === "package" && (
-                <Field label="Preferred Vehicle" icon={Car}>
-                  <select name="vehiclePreference" value={formData.vehiclePreference} onChange={handleInputChange} className={selectCls}>
-                    {VEHICLE_PREFERENCES.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </Field>
-              )}
+              {/* Vehicle choice (all modes) — every option carries its rate.
+                  Fleet-card bookings arrive preselected; general/package modes
+                  also offer "No preference". */}
+              <Field
+                label={mode === "vehicle" ? "Vehicle" : "Preferred Vehicle"}
+                icon={Car}
+                hint={
+                  mode !== "package" && selectedVehicle
+                    ? `Local 8h / 80km package approx ₹${selectedVehicle.eightHours.toLocaleString("en-IN")} — final fare confirmed by our team`
+                    : undefined
+                }
+              >
+                <select name="vehiclePreference" value={formData.vehiclePreference} onChange={handleInputChange} className={selectCls}>
+                  {mode !== "vehicle" && <option value={NO_PREFERENCE}>{NO_PREFERENCE}</option>}
+                  {/* Unknown fleet name (no pricing match) — keep it selectable verbatim. */}
+                  {mode === "vehicle" &&
+                    formData.vehiclePreference &&
+                    formData.vehiclePreference !== NO_PREFERENCE &&
+                    !findVehicleByValue(formData.vehiclePreference) && (
+                      <option value={formData.vehiclePreference}>{formData.vehiclePreference}</option>
+                    )}
+                  {VEHICLE_OPTIONS.map((v) => (
+                    <option key={v.id} value={vehicleOptionText(v)}>{vehicleOptionText(v)}</option>
+                  ))}
+                </select>
+              </Field>
 
               {/* Trip type + Passengers */}
               <div className="grid grid-cols-2 gap-4">
@@ -518,9 +562,87 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 type="submit"
                 className="w-full bg-gradient-to-r from-gold via-gold-hover to-gold hover:opacity-90 text-zinc-950 font-bold py-3 rounded-xl text-sm tracking-wider uppercase shadow-lg shadow-gold/15 active:scale-[0.98] transition-all cursor-pointer"
               >
-                Continue to Payment
+                Review Booking
               </button>
             </form>
+          )}
+
+          {/* STEP 1b: Confirmation — full trip summary before payment */}
+          {step === "confirm" && (
+            <div className="space-y-5">
+
+              {/* Route + dates banner */}
+              <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 space-y-2">
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500">
+                  {mode === "package" ? "Package Trip" : "Route"}
+                </p>
+                <p className="text-base font-bold font-serif text-zinc-900 flex items-center gap-2 flex-wrap">
+                  <span>{formData.pickup}</span>
+                  {mode !== "package" && formData.drop && (
+                    <>
+                      <span className="text-gold">→</span>
+                      <span>{formData.drop}</span>
+                    </>
+                  )}
+                  {mode === "package" && selectedItem?.name && (
+                    <>
+                      <span className="text-gold">→</span>
+                      <span>{selectedItem.name}</span>
+                    </>
+                  )}
+                </p>
+                <p className="text-xs text-zinc-600 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-gold" />
+                  <span>
+                    {fmtDate(formData.fromDate)} – {fmtDate(formData.toDate)}
+                    {formData.pickupTime && ` · Pickup at ${formData.pickupTime}`}
+                  </span>
+                </p>
+              </div>
+
+              {/* Trip details */}
+              <div className="rounded-xl border border-zinc-200 bg-white divide-y divide-zinc-100 overflow-hidden">
+                <SummaryRow label="Traveller" value={formData.name} />
+                <SummaryRow label="Phone" value={formData.phone} />
+                <SummaryRow label="Trip Type" value={formData.tripType} />
+                <SummaryRow label="Passengers" value={formData.passengers} />
+                {mode === "package" && <SummaryRow label="Package" value={selectedItem?.name} />}
+                <SummaryRow label="Vehicle" value={formData.vehiclePreference} />
+                <SummaryRow label="Notes" value={formData.notes} />
+              </div>
+
+              {/* Indicative fare */}
+              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-zinc-500">Estimated Fare</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    {mode === "package" ? "Package price" : "Based on the 8h local package rate"}
+                  </p>
+                </div>
+                <span className="text-xl font-bold font-serif text-gold">₹{fare.toLocaleString("en-IN")}</span>
+              </div>
+              <p className="text-[11px] text-zinc-400 -mt-2">
+                Indicative estimate. Our team confirms the final fare based on distance, tolls and your requirements.
+              </p>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep("form")}
+                  className="py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-zinc-200"
+                >
+                  Edit Details
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setApiError(""); setStep("pay"); }}
+                  className="py-3 bg-gold hover:bg-gold-hover text-zinc-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-gold/15 active:scale-[0.98]"
+                >
+                  Confirm &amp; Continue
+                </button>
+              </div>
+            </div>
           )}
 
           {/* STEP 2: Payment choice (real) */}
@@ -575,7 +697,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
 
               <button
                 type="button"
-                onClick={() => setStep("form")}
+                onClick={() => setStep("confirm")}
                 className="w-full py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-zinc-200 dark:border-white/5"
               >
                 Back

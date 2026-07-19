@@ -60,23 +60,23 @@ Fares exclude toll gate fees, parking charges, state entry tax/permits, hill-sta
 
 ## Pages
 
-- Home: https://roadcruise-client.vercel.app/
-- Vehicles/Fleet: https://roadcruise-client.vercel.app/vehicles
-- Tours & Travels: https://roadcruise-client.vercel.app/tours-travels
-- About: https://roadcruise-client.vercel.app/about
-- FAQs: https://roadcruise-client.vercel.app/faqs
-- Contact: https://roadcruise-client.vercel.app/contact
-- Blog: https://roadcruise-client.vercel.app/blog
-- Terms of Service: https://roadcruise-client.vercel.app/terms
-- Privacy Policy: https://roadcruise-client.vercel.app/privacy
-- Refund & Cancellation Policy: https://roadcruise-client.vercel.app/refund
+- Home: https://roadcruise.in/
+- Vehicles/Fleet: https://roadcruise.in/vehicles
+- Tours & Travels: https://roadcruise.in/tours-travels
+- About: https://roadcruise.in/about
+- FAQs: https://roadcruise.in/faqs
+- Contact: https://roadcruise.in/contact
+- Blog: https://roadcruise.in/blog
+- Terms of Service: https://roadcruise.in/terms
+- Privacy Policy: https://roadcruise.in/privacy
+- Refund & Cancellation Policy: https://roadcruise.in/refund
 
 ## Blog Articles
 
-- The Ultimate Guide to Nilgiri Hills Road Trips: https://roadcruise-client.vercel.app/blog/nilgiri-guide
-- Safety on the Ghat Roads — 5 Critical Rules: https://roadcruise-client.vercel.app/blog/ghat-road-safety
-- Top 5 Hidden Waterfalls in Coorg: https://roadcruise-client.vercel.app/blog/coorg-waterfalls
-- A Day in the Life of a Luxury Concierge Chauffeur: https://roadcruise-client.vercel.app/blog/chauffeur-life
-- Best Seafood Pitstops Along the East Coast Road: https://roadcruise-client.vercel.app/blog/east-coast-road
-- Munnar Tea Valley Trail — Scenic Driving Routes: https://roadcruise-client.vercel.app/blog/munnar-tea-valleys
-- Understanding ISO 9001:2015 for Travel Safety: https://roadcruise-client.vercel.app/blog/iso-tourism-safety
+- The Ultimate Guide to Nilgiri Hills Road Trips: https://roadcruise.in/blog/nilgiri-guide
+- Safety on the Ghat Roads — 5 Critical Rules: https://roadcruise.in/blog/ghat-road-safety
+- Top 5 Hidden Waterfalls in Coorg: https://roadcruise.in/blog/coorg-waterfalls
+- A Day in the Life of a Luxury Concierge Chauffeur: https://roadcruise.in/blog/chauffeur-life
+- Best Seafood Pitstops Along the East Coast Road: https://roadcruise.in/blog/east-coast-road
+- Munnar Tea Valley Trail — Scenic Driving Routes: https://roadcruise.in/blog/munnar-tea-valleys
+- Understanding ISO 9001:2015 for Travel Safety: https://roadcruise.in/blog/iso-tourism-safety

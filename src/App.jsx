@@ -42,7 +42,6 @@ export default function App() {
 
 function AppContent() {
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -52,15 +51,6 @@ function AppContent() {
     return saved ? JSON.parse(saved) : null;
   });
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-
-  // Sync theme selection to document element
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
 
   // Backward-compatibility shim for the old HashRouter URLs. Links that were
   // already emailed or bookmarked as `/#/route?params` (reset-password and
@@ -85,10 +75,6 @@ function AppContent() {
     setIsModalOpen(true);
   };
 
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
-  };
-
   const handleAuthSuccess = (user) => {
     setCurrentUser(user);
     localStorage.setItem("rc_user", JSON.stringify(user));
@@ -105,12 +91,10 @@ function AppContent() {
   return (
     <>
       <ScrollToTop />
-      <div className="min-h-screen bg-zinc-50 dark:bg-bg-dark text-zinc-900 dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden transition-colors duration-300">
+      <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden">
         {/* Sticky Luxury Navbar */}
-        <Navbar 
-          onBookNowClick={openBooking} 
-          isDarkMode={isDarkMode} 
-          onThemeToggle={toggleTheme} 
+        <Navbar
+          onBookNowClick={openBooking}
           currentUser={currentUser}
           onAuthClick={() => setIsAuthOpen(true)}
           onLogout={handleLogout}

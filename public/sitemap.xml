@@ -4,87 +4,104 @@
      noindex in the app. Keep the origin in sync with src/config/site.js. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://roadcruise-client.vercel.app/</loc>
+    <loc>https://roadcruise.in/</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/about</loc>
+    <loc>https://roadcruise.in/about</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/vehicles</loc>
+    <loc>https://roadcruise.in/vehicles</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/tours-travels</loc>
+    <loc>https://roadcruise.in/tours-travels</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog</loc>
+    <loc>https://roadcruise.in/blog</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/contact</loc>
+    <loc>https://roadcruise.in/contact</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/faqs</loc>
+    <loc>https://roadcruise.in/faqs</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/terms</loc>
+    <loc>https://roadcruise.in/terms</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/privacy</loc>
+    <loc>https://roadcruise.in/privacy</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/refund</loc>
+    <loc>https://roadcruise.in/refund</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/nilgiri-guide</loc>
+    <loc>https://roadcruise.in/blog/nilgiri-guide</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/ghat-road-safety</loc>
+    <loc>https://roadcruise.in/blog/ghat-road-safety</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/coorg-waterfalls</loc>
+    <loc>https://roadcruise.in/blog/coorg-waterfalls</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/chauffeur-life</loc>
+    <loc>https://roadcruise.in/blog/chauffeur-life</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/east-coast-road</loc>
+    <loc>https://roadcruise.in/blog/east-coast-road</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/munnar-tea-valleys</loc>
+    <loc>https://roadcruise.in/blog/munnar-tea-valleys</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://roadcruise-client.vercel.app/blog/iso-tourism-safety</loc>
+    <loc>https://roadcruise.in/blog/iso-tourism-safety</loc>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

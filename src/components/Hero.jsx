@@ -44,7 +44,7 @@ export default function Hero({ onBookNowClick }) {
   return (
     <section id="home" className="relative min-h-[95vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/70 via-zinc-50/95 to-white dark:from-zinc-900/30 dark:via-zinc-950/95 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
+      <div className="absolute inset-0 bg-radial-[circle_at_center,_var(--tw-gradient-stops)] from-zinc-100/35 via-zinc-50/70 to-white/90 dark:from-zinc-900/30 dark:via-zinc-950/95 dark:to-zinc-950 z-10 transition-colors duration-300"></div>
       
       {/* Cinematic Vignette */}
       <div className="absolute inset-0 cinematic-vignette z-15 pointer-events-none opacity-30 dark:opacity-90"></div>
@@ -57,7 +57,7 @@ export default function Hero({ onBookNowClick }) {
           muted
           playsInline
           //poster="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1920"
-          className="w-full h-full object-cover opacity-10 dark:opacity-100 transition-opacity duration-500"
+          className="w-full h-full object-cover opacity-35 dark:opacity-100 transition-opacity duration-500"
         >
           <source 
             src="https://www.pexels.com/download/video/32298055/" 

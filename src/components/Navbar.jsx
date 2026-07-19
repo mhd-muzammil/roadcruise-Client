@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Phone, Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
+import { Phone, Menu, X, ChevronDown } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
-export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, currentUser, onAuthClick, onLogout }) {
+export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -146,18 +146,8 @@ export default function Navbar({ onBookNowClick, isDarkMode, onThemeToggle, curr
           </button>
         </div>
 
-        {/* Mobile Menu Trigger & Theme switch */}
+        {/* Mobile Menu Trigger */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Theme Switcher for Mobile (On Hold)
-          <button
-            onClick={onThemeToggle}
-            className="p-2 rounded-full border border-zinc-200 dark:border-white/10 hover:border-gold/50 text-zinc-600 dark:text-zinc-400 hover:text-gold bg-zinc-100 dark:bg-white/5 active:scale-95 transition-all"
-            aria-label="Toggle theme mode"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-          */}
-          
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors"

@@ -16,4 +16,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://roadcruise-client.vercel.app/sitemap.xml
+Sitemap: https://roadcruise.in/sitemap.xml
