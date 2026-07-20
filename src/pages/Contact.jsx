@@ -156,13 +156,15 @@ export default function Contact() {
           </div>
 
           {/* Map */}
-          <div className="h-56 rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/5 relative bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
-            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:16px_16px] opacity-60"></div>
-            <div className="relative text-center space-y-2 max-w-xs">
-              <MapPin className="w-8 h-8 text-gold mx-auto" />
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Road Cruise Central Hub</h3>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Chennai, Tamil Nadu, India. Serving clients throughout South India.</p>
-            </div>
+          <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-zinc-900">
+            <iframe
+              title="Road Cruise location on Google Maps"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d707.7945073980175!2d79.9131501663267!3d13.12619767683!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5291f238b0eded%3A0x6997e3ac7dd6a289!2sRoadcruise.in!5e1!3m2!1sen!2sin!4v1784523400891!5m2!1sen!2sin"
+              className="w-full h-56 border-0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
           </div>
         </div>
 
