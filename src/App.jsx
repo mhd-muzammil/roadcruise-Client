@@ -22,6 +22,7 @@ import Contact from "./pages/Contact";
 import Fleet from "./pages/Fleet";
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Gallery = lazy(() => import("./pages/Gallery"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -109,6 +110,7 @@ function AppContent() {
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -132,7 +134,7 @@ function AppContent() {
             path="/verify-email"
             element={<VerifyEmail onAuthClick={() => setIsAuthOpen(true)} />}
           />
-          <Route path="/admin" element={<Admin currentUser={currentUser} onBypassAdmin={handleAuthSuccess} />} />
+          <Route path="/admin" element={<Admin currentUser={currentUser} />} />
           {/* Unknown paths (typo'd or truncated emailed links, retired
               paths) land on Home instead of an empty page. */}
           <Route path="*" element={<Navigate to="/" replace />} />

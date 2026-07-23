@@ -6,6 +6,7 @@ import {
 import { createBooking, verifyPayment, simulateMockCheckout } from "../utils/api";
 import {
   VEHICLE_OPTIONS, NO_PREFERENCE, vehicleOptionText, findVehicleByName, findVehicleByValue,
+  loadVehicleOptions,
 } from "../data/vehicles";
 
 // Dynamically load Razorpay's hosted checkout (only when needed). The hosted
@@ -97,6 +98,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   const [step, setStep] = useState("auth_prompt");
   // Holds the mock order details while the simulated (preview) checkout is open.
   const [mockCheckout, setMockCheckout] = useState(null); // { orderId, booking }
+  // Live vehicle inventory (admin-managed). Loaded from the server when the modal
+  // opens so the dropdown, its availability, and its ids match the fleet page.
+  const [vehicleOptions, setVehicleOptions] = useState(VEHICLE_OPTIONS);
 
   // Booking context: general (header), vehicle (fleet), or package (tours).
   const mode = selectedItem?.type === "package" ? "package"
@@ -113,7 +117,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
 
   // The vehicle currently chosen in the dropdown (null for "No preference" or
   // an unknown verbatim name).
-  const selectedVehicle = findVehicleByValue(formData.vehiclePreference);
+  const selectedVehicle = findVehicleByValue(formData.vehiclePreference, vehicleOptions);
 
   // Indicative fare — the team confirms the final amount. Packages keep the
   // listed package price; otherwise the chosen vehicle's 8h local-package rate
@@ -150,6 +154,14 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     setApiError("");
     setMockCheckout(null);
   }, [isOpen, currentUser, selectedItem, mode]);
+
+  // Refresh the live vehicle inventory (+ availability) when the modal opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    loadVehicleOptions().then((opts) => { if (active) setVehicleOptions([...opts]); });
+    return () => { active = false; };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -201,6 +213,14 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
       setStep("auth_prompt");
       return;
     }
+    // 409 => the chosen vehicle is fully booked. Refresh availability and send
+    // the user back to the form to pick another vehicle.
+    if (err?.status === 409) {
+      loadVehicleOptions().then((opts) => setVehicleOptions([...opts]));
+      setApiError(err?.message || "This vehicle is already booked — please choose another.");
+      setStep("form");
+      return;
+    }
     setApiError(err?.message || "Could not create booking");
     setStep("pay");
   };
@@ -220,6 +240,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     // "Sedan (Dzire, Aura, Amaze) — ₹14/km"), for every booking mode — the
     // server persists it verbatim and the notification emails render it.
     vehicle: formData.vehiclePreference || "",
+    // Concrete fleet vehicle id (null for "No preference"/custom) so the server
+    // can enforce availability and hold a unit.
+    vehicleId: selectedVehicle?.id || null,
     packageName: mode === "package" ? selectedItem?.name || "" : "",
     passengers: formData.passengers,
     pickupTime: formData.pickupTime,
@@ -510,12 +533,17 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   {mode === "vehicle" &&
                     formData.vehiclePreference &&
                     formData.vehiclePreference !== NO_PREFERENCE &&
-                    !findVehicleByValue(formData.vehiclePreference) && (
+                    !findVehicleByValue(formData.vehiclePreference, vehicleOptions) && (
                       <option value={formData.vehiclePreference}>{formData.vehiclePreference}</option>
                     )}
-                  {VEHICLE_OPTIONS.map((v) => (
-                    <option key={v.id} value={vehicleOptionText(v)}>{vehicleOptionText(v)}</option>
-                  ))}
+                  {vehicleOptions.map((v) => {
+                    const booked = v.available === false;
+                    return (
+                      <option key={v.id} value={vehicleOptionText(v)} disabled={booked}>
+                        {vehicleOptionText(v)}{booked ? " — currently booked" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </Field>
 

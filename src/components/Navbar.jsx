@@ -61,20 +61,21 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
-          <NavLink to="/" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`} end>Home</NavLink>
-          <NavLink to="/about" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>About</NavLink>
-          <NavLink to="/vehicles" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Vehicles</NavLink>
-          <NavLink to="/tours-travels" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Tours & Travels</NavLink>
-          <NavLink to="/blog" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Blog</NavLink>
-          <NavLink to="/contact" className={({ isActive }) => `text-sm font-medium tracking-wide cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Contact</NavLink>
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+          <NavLink to="/" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`} end>Home</NavLink>
+          <NavLink to="/about" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>About</NavLink>
+          <NavLink to="/vehicles" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Vehicles</NavLink>
+          <NavLink to="/tours-travels" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Tours & Travels</NavLink>
+          <NavLink to="/gallery" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Gallery</NavLink>
+          <NavLink to="/blog" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Blog</NavLink>
+          <NavLink to="/contact" className={({ isActive }) => `text-sm font-medium tracking-wide whitespace-nowrap cursor-pointer transition-colors ${isActive ? "text-gold font-semibold" : "text-zinc-600 dark:text-zinc-300 hover:text-gold"}`}>Contact</NavLink>
         </nav>
 
         {/* Action controls */}
-        <div className="hidden md:flex items-center gap-4">
-          <a 
+        <div className="hidden lg:flex items-center gap-3">
+          <a
             href="tel:+918886767467"
-            className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-gold text-xs transition-colors"
+            className="hidden xl:flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-gold text-xs transition-colors"
           >
             <Phone className="w-3.5 h-3.5" />
             <span>+91 88867 67467</span>
@@ -111,7 +112,7 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
                   >
                     My Bookings
                   </Link>
-                  {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
+                  {currentUser.role === "admin" && (
                     <Link
                       to="/admin"
                       onClick={() => setUserMenuOpen(false)}
@@ -147,7 +148,7 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
         </div>
 
         {/* Mobile Menu Trigger */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex lg:hidden items-center gap-2">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-zinc-600 dark:text-zinc-300 hover:text-gold transition-colors"
@@ -160,7 +161,7 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[73px] bg-white/95 dark:bg-zinc-950/95 border-b border-zinc-200 dark:border-white/5 backdrop-blur-xl py-6 px-6 animate-fade-in flex flex-col gap-5 shadow-2xl">
+        <div className="lg:hidden fixed inset-x-0 top-[73px] bg-white/95 dark:bg-zinc-950/95 border-b border-zinc-200 dark:border-white/5 backdrop-blur-xl py-6 px-6 animate-fade-in flex flex-col gap-5 shadow-2xl">
           <NavLink 
             to="/" 
             onClick={() => setMobileMenuOpen(false)}
@@ -183,15 +184,22 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
           >
             Vehicles
           </NavLink>
-          <NavLink 
-            to="/tours-travels" 
+          <NavLink
+            to="/tours-travels"
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
           >
             Tours & Travels
           </NavLink>
-          <NavLink 
-            to="/blog" 
+          <NavLink
+            to="/gallery"
+            onClick={() => setMobileMenuOpen(false)}
+            className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
+          >
+            Gallery
+          </NavLink>
+          <NavLink
+            to="/blog"
             onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) => `text-lg font-medium transition-colors cursor-pointer ${isActive ? "text-gold font-bold" : "text-zinc-700 dark:text-zinc-300 hover:text-gold"}`}
           >

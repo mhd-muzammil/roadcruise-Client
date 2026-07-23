@@ -1,14 +1,17 @@
-// Booking-form vehicle options with indicative pricing.
+// Booking-form vehicle options. These now come from the server (admin-managed
+// inventory via GET /api/vehicles) rather than being hard-coded, so the booking
+// dropdown, the Vehicles page, and the admin panel share ONE source of truth.
 //
-// Mirrors the fleet data in components/Fleet.jsx (and the JSON-LD in
-// client/index.html) WITHOUT importing it — Fleet.jsx is presentation-owned and
-// this module is the single source the booking flow reads. Keep the two in sync
-// when tariffs change.
-//
+// A small static fallback (the original fleet) is kept so the booking form still
+// works if the API is briefly unavailable. Helper shapes are unchanged so the
+// rest of the booking flow (BookingModal) keeps working as before, with one
+// addition: options now carry an `id` so the booking payload can send vehicleId
+// and the server can enforce availability.
+import { getVehicles } from "../utils/api";
+
 //   perKm      -> outstation rate (₹/km), shown in the dropdown label
 //   eightHours -> local 8h/80km package price (₹), used as the indicative fare
-
-export const VEHICLE_OPTIONS = [
+const STATIC_OPTIONS = [
   { id: "sedan", label: "Sedan (Dzire, Aura, Amaze)", perKm: 14, eightHours: 2300 },
   { id: "suv-any", label: "Any SUV (Ertiga, Marazzo, Kia Carens)", perKm: 18, eightHours: 3300 },
   { id: "kia-carens", label: "Kia Carens", perKm: 20, eightHours: 3500 },
@@ -20,6 +23,35 @@ export const VEHICLE_OPTIONS = [
   { id: "minibus-21", label: "Mini Bus 21 Seater", perKm: 30, eightHours: 9000 },
   { id: "minibus-32", label: "Mini Bus 32 Seater", perKm: 50, eightHours: 12000 },
 ];
+
+// Live options, replaced once the server list loads (see loadVehicleOptions()).
+export let VEHICLE_OPTIONS = STATIC_OPTIONS;
+
+/** Map a server vehicle to the booking-option shape used by the dropdown. */
+const toOption = (v) => ({
+  id: v.id,
+  label: v.name,
+  perKm: v.outstationRate,
+  eightHours: v.localPricing?.eightHours || 0,
+  available: v.available !== false,
+});
+
+/**
+ * Fetch the fleet from the server and refresh VEHICLE_OPTIONS. Returns the new
+ * options (falls back to the static list on any error). Callers can await this
+ * and re-render, or ignore it and use the static default.
+ */
+export async function loadVehicleOptions() {
+  try {
+    const vehicles = await getVehicles();
+    if (Array.isArray(vehicles) && vehicles.length) {
+      VEHICLE_OPTIONS = vehicles.map(toOption);
+    }
+  } catch {
+    VEHICLE_OPTIONS = STATIC_OPTIONS;
+  }
+  return VEHICLE_OPTIONS;
+}
 
 /** Neutral choice offered on general/package bookings. */
 export const NO_PREFERENCE = "No preference (recommend for me)";
@@ -33,16 +65,16 @@ export const NO_PREFERENCE = "No preference (recommend for me)";
 export const vehicleOptionText = (v) => `${v.label} — ₹${v.perKm}/km`;
 
 /**
- * Resolve a fleet-card vehicle name (Fleet.jsx `vehicle.name`) to its option,
- * used to preselect the dropdown when the user clicked "Book Now" on a card.
- * Case-insensitive exact match on the label; returns null when unknown.
+ * Resolve a fleet-card vehicle name/id to its option, used to preselect the
+ * dropdown when the user clicked "Book Now" on a card. Matches on id first
+ * (exact), then case-insensitive label. Returns null when unknown.
  */
-export const findVehicleByName = (name) => {
+export const findVehicleByName = (name, options = VEHICLE_OPTIONS) => {
   const n = String(name || "").trim().toLowerCase();
   if (!n) return null;
-  return VEHICLE_OPTIONS.find((v) => v.label.toLowerCase() === n) || null;
+  return options.find((v) => v.id === name || v.label.toLowerCase() === n) || null;
 };
 
 /** Resolve a stored dropdown value (label — ₹N/km) back to its option. */
-export const findVehicleByValue = (value) =>
-  VEHICLE_OPTIONS.find((v) => vehicleOptionText(v) === value) || null;
+export const findVehicleByValue = (value, options = VEHICLE_OPTIONS) =>
+  options.find((v) => vehicleOptionText(v) === value) || null;

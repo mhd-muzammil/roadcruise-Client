@@ -3,6 +3,22 @@
 // back to localhost for local development. No longer hard-wired to localhost.
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+// API origin = BASE_URL without the trailing "/api". Admin-uploaded media is
+// served by the backend at "/uploads/…" (a different origin than this SPA on
+// Vercel), so relative media paths must be resolved against the API origin.
+export const API_ORIGIN = BASE_URL.replace(/\/api\/?$/, "");
+
+/**
+ * Resolve a media URL for <img>/<video>. Absolute http(s) URLs (e.g. the seed
+ * Pinterest images) pass through unchanged; relative "/uploads/…" paths get the
+ * API origin prepended so they load from the backend, not the SPA.
+ */
+export const mediaUrl = (u) => {
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  return `${API_ORIGIN}${u.startsWith("/") ? "" : "/"}${u}`;
+};
+
 // The logged-in user (with accessToken) is persisted under "rc_user" by App.jsx.
 const getStoredUser = () => {
   try {
@@ -267,5 +283,93 @@ export const submitReview = async ({ name, role, rating, text }) => {
     body: JSON.stringify({ name, role, rating, text })
   });
   if (!res.ok) return throwError(res, "Could not submit your review. Please try again.");
+  return res.json();
+};
+
+// --- Vehicles (public browse; admin CRUD + media + availability) ---
+
+/** Public fleet list, each vehicle with { totalUnits, heldCount, available }. */
+export const getVehicles = async () => {
+  const res = await fetch(`${BASE_URL}/vehicles`);
+  if (!res.ok) return throwError(res, "Failed to load vehicles");
+  return res.json();
+};
+
+/** Admin fleet list — includes `heldBookings` for the "Free" controls. */
+export const getAdminVehicles = async () => {
+  const res = await fetch(`${BASE_URL}/vehicles/admin`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to load vehicles");
+  return res.json();
+};
+
+export const createVehicle = async (data) => {
+  const res = await fetch(`${BASE_URL}/vehicles`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return throwError(res, "Failed to create vehicle");
+  return res.json();
+};
+
+export const updateVehicle = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/vehicles/${id}`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return throwError(res, "Failed to update vehicle");
+  return res.json();
+};
+
+export const deleteVehicle = async (id) => {
+  const res = await fetch(`${BASE_URL}/vehicles/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to delete vehicle");
+  return res.json();
+};
+
+/** Upload one or more photos/videos to a vehicle (multipart; token attached). */
+export const uploadVehicleMedia = async (id, files) => {
+  const fd = new FormData();
+  [...files].forEach((f) => fd.append("files", f));
+  const res = await fetch(`${BASE_URL}/vehicles/${id}/media`, {
+    method: "POST",
+    headers: authHeaders(), // no Content-Type — the browser sets the multipart boundary
+    body: fd,
+  });
+  if (!res.ok) return throwError(res, "Failed to upload media");
+  return res.json();
+};
+
+/** Free the vehicle unit held by a booking (admin, e.g. after the trip). */
+export const releaseVehicleHold = async (bookingId) => {
+  const res = await fetch(`${BASE_URL}/vehicles/holds/${bookingId}/release`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) return throwError(res, "Failed to free vehicle");
+  return res.json();
+};
+
+// --- Gallery (public list; admin upload/delete) ---
+
+export const getGallery = async () => {
+  const res = await fetch(`${BASE_URL}/gallery`);
+  if (!res.ok) return throwError(res, "Failed to load the gallery");
+  return res.json();
+};
+
+export const uploadGalleryMedia = async (files, caption = "") => {
+  const fd = new FormData();
+  [...files].forEach((f) => fd.append("files", f));
+  if (caption) fd.append("caption", caption);
+  const res = await fetch(`${BASE_URL}/gallery`, { method: "POST", headers: authHeaders(), body: fd });
+  if (!res.ok) return throwError(res, "Failed to upload media");
+  return res.json();
+};
+
+export const deleteGalleryItem = async (id) => {
+  const res = await fetch(`${BASE_URL}/gallery/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to delete media");
   return res.json();
 };
