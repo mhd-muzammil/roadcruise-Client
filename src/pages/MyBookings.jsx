@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
-  CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket,
+  CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
 } from "lucide-react";
-import { fetchBookings } from "../utils/api";
+import { fetchBookings, cancelBooking } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
 
@@ -45,6 +45,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payingId, setPayingId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
   const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
@@ -86,6 +87,27 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
       setError(err?.message || "Payment could not be completed.");
     } finally {
       setPayingId(null);
+    }
+  };
+
+  const handleCancel = async (booking) => {
+    if (!window.confirm(`Cancel booking ${booking.id}? This can't be undone.`)) return;
+    setNotice("");
+    setError("");
+    setCancellingId(booking.id);
+    try {
+      await cancelBooking(booking.id);
+      setNotice(`Booking ${booking.id} has been cancelled. A confirmation email is on its way.`);
+      await load(); // refresh statuses
+    } catch (err) {
+      if (err?.status === 401) {
+        onSessionExpired?.();
+        setError("Your session has expired. Please sign in again.");
+      } else {
+        setError(err?.message || "Could not cancel your booking. Please try again.");
+      }
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -163,6 +185,8 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
             const meta = statusMeta(b.status);
             const isPackage = b.category === "package" || b.packageName;
             const paying = payingId === b.id;
+            const cancelling = cancellingId === b.id;
+            const canCancel = b.status !== "Cancelled" && b.status !== "Completed";
             return (
               <div key={b.id} className="rounded-2xl border border-zinc-200 dark:border-white/5 bg-white dark:bg-white/5 overflow-hidden">
                 <div className="p-5 flex flex-col md:flex-row md:items-start gap-5">
@@ -199,18 +223,30 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                       <p className="text-lg font-serif font-bold text-gold">₹{Number(b.fare || 0).toLocaleString("en-IN")}</p>
                       <p className="text-[10px] text-zinc-400 mt-0.5">{b.paymentMethod}</p>
                     </div>
-                    {meta.canPay ? (
-                      <button
-                        onClick={() => handlePay(b)}
-                        disabled={paying}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover disabled:opacity-60 text-zinc-950 font-bold rounded-lg text-xs uppercase tracking-wider transition-all shadow-md whitespace-nowrap"
-                      >
-                        {paying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                        {paying ? "Processing…" : "Pay Now"}
-                      </button>
-                    ) : meta.tone === "emerald" ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-500 text-xs font-bold"><CheckCircle className="w-4 h-4" /> Paid</span>
-                    ) : null}
+                    <div className="flex flex-col items-end gap-2">
+                      {meta.canPay ? (
+                        <button
+                          onClick={() => handlePay(b)}
+                          disabled={paying || cancelling}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-gold hover:bg-gold-hover disabled:opacity-60 text-zinc-950 font-bold rounded-lg text-xs uppercase tracking-wider transition-all shadow-md whitespace-nowrap"
+                        >
+                          {paying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                          {paying ? "Processing…" : "Pay Now"}
+                        </button>
+                      ) : meta.tone === "emerald" ? (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-500 text-xs font-bold"><CheckCircle className="w-4 h-4" /> Paid</span>
+                      ) : null}
+                      {canCancel && (
+                        <button
+                          onClick={() => handleCancel(b)}
+                          disabled={paying || cancelling}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-red-500 hover:text-red-600 disabled:opacity-60 transition-colors whitespace-nowrap"
+                        >
+                          {cancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                          {cancelling ? "Cancelling…" : "Cancel booking"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

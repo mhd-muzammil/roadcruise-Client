@@ -196,6 +196,20 @@ export const deleteBooking = async (id) => {
   return res.json();
 };
 
+/**
+ * Cancel a booking. A customer may cancel their own booking; admins/staff can
+ * cancel any. The server frees the held vehicle unit and emails the customer.
+ * Returns the updated booking (status "Cancelled").
+ */
+export const cancelBooking = async (id) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/cancel`, {
+    method: "PATCH",
+    headers: authHeaders()
+  });
+  if (!res.ok) return throwError(res, "Failed to cancel booking");
+  return res.json();
+};
+
 // --- Contact / enquiry (public — no auth) ---
 
 /**

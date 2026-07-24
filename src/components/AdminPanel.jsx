@@ -292,7 +292,7 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
                         </button>
                       )}
                       {b.status !== "Cancelled" && b.status !== "Completed" && (
-                        <button onClick={() => act(() => updateBooking(b.id, { status: "Cancelled" }), b.id)}
+                        <button onClick={() => { if (confirm(`Cancel booking ${b.id}? The customer will be emailed.`)) act(() => updateBooking(b.id, { status: "Cancelled" }), b.id); }}
                           className="p-1 text-amber-500 hover:bg-amber-500/10 rounded" title="Cancel">
                           <X className="w-4 h-4" />
                         </button>
