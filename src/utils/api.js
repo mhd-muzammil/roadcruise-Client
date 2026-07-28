@@ -387,3 +387,49 @@ export const deleteGalleryItem = async (id) => {
   if (!res.ok) return throwError(res, "Failed to delete media");
   return res.json();
 };
+
+// --- Promotions (admin-created travel-package popup shown on site open) ---
+
+/** The newest active promo for the public popup, or null when none is live. */
+export const getActivePromo = async () => {
+  const res = await fetch(`${BASE_URL}/promos/active`);
+  if (!res.ok) return throwError(res, "Failed to load promotions");
+  return res.json();
+};
+
+/** Admin list — every promo (active + inactive), newest first. */
+export const getAdminPromos = async () => {
+  const res = await fetch(`${BASE_URL}/promos`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to load promotions");
+  return res.json();
+};
+
+/**
+ * Create a promo (admin). `fields` = { title, tagline, duration, price,
+ * highlights (newline-separated string) }; `imageFile` is optional.
+ */
+export const createPromo = async (fields, imageFile) => {
+  const fd = new FormData();
+  Object.entries(fields).forEach(([k, v]) => v !== undefined && v !== null && fd.append(k, v));
+  if (imageFile) fd.append("image", imageFile);
+  const res = await fetch(`${BASE_URL}/promos`, { method: "POST", headers: authHeaders(), body: fd });
+  if (!res.ok) return throwError(res, "Failed to create promotion");
+  return res.json();
+};
+
+/** Partial update (admin) — e.g. { active: false } to unpublish. */
+export const updatePromo = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/promos/${id}`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) return throwError(res, "Failed to update promotion");
+  return res.json();
+};
+
+export const deletePromo = async (id) => {
+  const res = await fetch(`${BASE_URL}/promos/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to delete promotion");
+  return res.json();
+};

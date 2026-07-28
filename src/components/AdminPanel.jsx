@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
+  Megaphone, Eye, EyeOff, Clock,
 } from "lucide-react";
 import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
+  getAdminPromos, createPromo, updatePromo, deletePromo,
 } from "../utils/api";
 
 const TABS = [
@@ -15,6 +17,7 @@ const TABS = [
   { id: "bookings", label: "Bookings", icon: ClipboardList },
   { id: "fleet", label: "Vehicles", icon: Car },
   { id: "gallery", label: "Gallery", icon: ImageIcon },
+  { id: "promos", label: "Promotions", icon: Megaphone },
 ];
 
 const CATEGORIES = ["Sedans", "SUVs", "Tempo Travellers", "Mini Buses", "Luxury", "Other"];
@@ -49,6 +52,7 @@ export default function AdminPanel({ currentUser }) {
   const [bookings, setBookings] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [gallery, setGallery] = useState([]);
+  const [promos, setPromos] = useState([]);
   const [error, setError] = useState("");
 
   const isAdmin = currentUser && currentUser.role === "admin";
@@ -62,13 +66,17 @@ export default function AdminPanel({ currentUser }) {
   const loadGallery = useCallback(async () => {
     try { setGallery(await getGallery()); } catch (e) { console.error(e); }
   }, []);
+  const loadPromos = useCallback(async () => {
+    try { setPromos(await getAdminPromos()); } catch (e) { console.error(e); }
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
     loadBookings();
     loadVehicles();
     loadGallery();
-  }, [isAdmin, loadBookings, loadVehicles, loadGallery]);
+    loadPromos();
+  }, [isAdmin, loadBookings, loadVehicles, loadGallery, loadPromos]);
 
   // --- Authorization gate: admin role only. No bypass, no test credentials. ---
   if (!isAdmin) {
@@ -155,6 +163,9 @@ export default function AdminPanel({ currentUser }) {
         )}
         {activeTab === "gallery" && (
           <GalleryTab gallery={gallery} reload={loadGallery} />
+        )}
+        {activeTab === "promos" && (
+          <PromosTab promos={promos} reload={loadPromos} />
         )}
       </div>
     </div>
@@ -531,6 +542,123 @@ function GalleryTab({ gallery, reload }) {
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
               {m.caption && <p className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] p-1.5 truncate">{m.caption}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+//  Promotions (travel-package popup shown to visitors on site open)
+// ============================================================================
+const EMPTY_PROMO = { title: "", tagline: "", duration: "", price: "", highlights: "" };
+
+function PromosTab({ promos, reload }) {
+  const [form, setForm] = useState(EMPTY_PROMO);
+  const [image, setImage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const imageRef = useRef(null);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      await createPromo(form, image);
+      setForm(EMPTY_PROMO); setImage(null);
+      if (imageRef.current) imageRef.current.value = "";
+      await reload();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  };
+
+  const withBusy = async (id, fn) => {
+    setBusyId(id);
+    try { await fn(); await reload(); } catch (e) { console.error(e); } finally { setBusyId(null); }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Package Promotions ({promos.length})</h3>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+          The newest <span className="text-gold font-bold">Live</span> promotion appears as a popup when visitors open the website — once per session.
+        </p>
+      </div>
+
+      <form onSubmit={submit} className="glass-premium p-6 rounded-2xl border border-gold/30 bg-gold/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Labeled label="Package Title *">
+          <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} placeholder="e.g. Kodaikanal Adventure Special" />
+        </Labeled>
+        <Labeled label="Tagline">
+          <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={inputCls} placeholder="e.g. Misty hills, bonfires & lakeside views" />
+        </Labeled>
+        <Labeled label="Duration">
+          <input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className={inputCls} placeholder="e.g. 3 Days · 4 Nights" />
+        </Labeled>
+        <Labeled label="Price ₹ (starting from)">
+          <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputCls} placeholder="e.g. 6,999" />
+        </Labeled>
+        <Labeled label="Cover Photo">
+          <input ref={imageRef} type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)}
+            className="text-[11px] text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gold/20 file:text-gold" />
+        </Labeled>
+        <div className="sm:col-span-2 lg:col-span-1">
+          <Labeled label="Highlights (one per line, max 6)">
+            <textarea rows={3} value={form.highlights} onChange={(e) => setForm({ ...form, highlights: e.target.value })}
+              className={inputCls} placeholder={"Sightseeing & local guides\nPrivate SUV transport\nComplimentary breakfasts"} />
+          </Labeled>
+        </div>
+        <div className="sm:col-span-2 lg:col-span-3">
+          <button type="submit" disabled={saving} className="w-full py-2.5 bg-gold hover:bg-gold-hover disabled:opacity-60 text-zinc-950 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Megaphone className="w-3.5 h-3.5" />} Publish Promotion
+          </button>
+        </div>
+      </form>
+
+      {promos.length === 0 ? (
+        <div className="text-center py-16 text-zinc-400 text-sm">No promotions yet. Publish one and it will greet visitors on the home page.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {promos.map((p) => (
+            <div key={p.id} className="glass-premium rounded-2xl border border-zinc-200 dark:border-white/5 bg-white/40 dark:bg-zinc-900/10 overflow-hidden flex gap-4 p-4">
+              <div className="w-28 h-28 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
+                {p.imageUrl ? (
+                  <img src={mediaUrl(p.imageUrl)} alt={p.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-300"><Megaphone className="w-8 h-8" /></div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{p.title}</h4>
+                    {p.tagline && <p className="text-[10px] text-zinc-400 truncate">{p.tagline}</p>}
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0 ${p.active ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-400"}`}>
+                    {p.active ? "Live" : "Hidden"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-zinc-500">
+                  {p.duration && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {p.duration}</span>}
+                  {p.price && <span className="font-bold text-gold">₹{p.price}</span>}
+                  {p.highlights?.length > 0 && <span>{p.highlights.length} highlights</span>}
+                </div>
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <button onClick={() => withBusy(p.id, () => updatePromo(p.id, { active: !p.active }))}
+                    className="px-2 py-1 text-[10px] font-bold bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 rounded flex items-center gap-1">
+                    {p.active ? <><EyeOff className="w-3 h-3" /> Hide</> : <><Eye className="w-3 h-3" /> Go Live</>}
+                  </button>
+                  <button onClick={() => { if (confirm(`Delete promotion "${p.title}"?`)) withBusy(p.id, () => deletePromo(p.id)); }}
+                    className="px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-500/10 rounded flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                  {busyId === p.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" />}
+                </div>
+              </div>
             </div>
           ))}
         </div>
