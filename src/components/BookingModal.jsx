@@ -57,7 +57,7 @@ function SummaryRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-4 px-4 py-2.5">
       <span className="text-[10px] uppercase tracking-wider text-zinc-500 pt-0.5 whitespace-nowrap">{label}</span>
-      <span className="text-sm font-medium text-zinc-900 text-right wrap-break-word min-w-0">{value}</span>
+      <span className="text-sm font-medium text-zinc-900 dark:text-white text-right wrap-break-word min-w-0">{value}</span>
     </div>
   );
 }
@@ -604,7 +604,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 <p className="text-[10px] uppercase tracking-wider text-zinc-500">
                   {mode === "package" ? "Package Trip" : "Route"}
                 </p>
-                <p className="text-base font-bold font-serif text-zinc-900 flex items-center gap-2 flex-wrap">
+                <p className="text-base font-bold font-serif text-zinc-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <span>{formData.pickup}</span>
                   {mode !== "package" && formData.drop && (
                     <>
@@ -619,7 +619,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                     </>
                   )}
                 </p>
-                <p className="text-xs text-zinc-600 flex items-center gap-1.5">
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-gold" />
                   <span>
                     {fmtDate(formData.fromDate)} – {fmtDate(formData.toDate)}
@@ -629,7 +629,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
               </div>
 
               {/* Trip details */}
-              <div className="rounded-xl border border-zinc-200 bg-white divide-y divide-zinc-100 overflow-hidden">
+              <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 divide-y divide-zinc-100 dark:divide-white/5 overflow-hidden">
                 <SummaryRow label="Traveller" value={formData.name} />
                 <SummaryRow label="Phone" value={formData.phone} />
                 <SummaryRow label="Trip Type" value={formData.tripType} />
@@ -640,7 +640,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
               </div>
 
               {/* Indicative fare */}
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-white/5 rounded-xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-zinc-500">Estimated Fare</p>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -658,7 +658,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 <button
                   type="button"
                   onClick={() => setStep("form")}
-                  className="py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-zinc-200"
+                  className="py-3 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-zinc-200 dark:border-white/10"
                 >
                   Edit Details
                 </button>

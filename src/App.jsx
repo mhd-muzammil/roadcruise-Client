@@ -12,6 +12,7 @@ import BookingModal from "./components/BookingModal";
 import AuthModal from "./components/AuthModal";
 import ScrollToTop from "./components/common/ScrollToTop";
 import FloatingContact from "./components/common/FloatingContact";
+import PromoPopup from "./components/PromoPopup";
 
 // Page Imports — primary landing routes stay eager; the rest are
 // code-split so their JS never blocks first paint of the home page.
@@ -92,7 +93,7 @@ function AppContent() {
   return (
     <>
       <ScrollToTop />
-      <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden">
+      <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-bg-dark dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden">
         {/* Sticky Luxury Navbar */}
         <Navbar
           onBookNowClick={openBooking}
@@ -147,6 +148,9 @@ function AppContent() {
 
         {/* Floating WhatsApp + SMS quick-contact buttons (all pages) */}
         <FloatingContact />
+
+        {/* Admin-published travel-package popup — shows once per session */}
+        <PromoPopup onBookNow={openBooking} />
 
         {/* Luxury Booking Dialog Modal */}
         <BookingModal

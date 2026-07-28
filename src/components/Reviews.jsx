@@ -187,10 +187,10 @@ export default function Reviews() {
   };
 
   const inputClasses =
-    "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/25 transition";
+    "w-full rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 shadow-sm focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/25 transition";
 
   return (
-    <section className="py-24 relative overflow-hidden bg-zinc-50 transition-colors duration-300">
+    <section className="py-24 relative overflow-hidden bg-zinc-50 dark:bg-bg-dark transition-colors duration-300">
       {/* Decorative Blur Background Element */}
       <div className="absolute top-1/2 left-10 w-96 h-96 bg-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-0 right-10 w-80 h-80 bg-gold/5 rounded-full blur-[120px] pointer-events-none"></div>
@@ -209,19 +209,19 @@ export default function Reviews() {
             </svg>
             <span className="text-[10px] font-bold tracking-widest text-gold uppercase">Customer Reviews</span>
             <span className="text-[10px] text-zinc-400">·</span>
-            <span className="text-[10px] font-bold text-zinc-700">{averageRating} ★ Rating</span>
+            <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">{averageRating} ★ Rating</span>
           </div>
 
-          <h2 className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 leading-tight">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white leading-tight">
             Heard from our <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-gold-hover to-gold italic font-normal text-glow-gold">travellers.</span>
           </h2>
-          <p className="text-sm text-zinc-600 font-light max-w-md mx-auto">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light max-w-md mx-auto">
             Read stories of comfort, luxury, and reliability shared by our premium clients.
           </p>
         </div>
 
         {/* Sliding reviews Card */}
-        <div className="relative overflow-hidden p-8 md:p-12 rounded-3xl bg-white border border-zinc-200 shadow-xl max-w-4xl mx-auto">
+        <div className="relative overflow-hidden p-8 md:p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xl max-w-4xl mx-auto">
           {/* Quote Accent Icon */}
           <Quote className="absolute top-6 left-6 w-16 h-16 text-gold/10 transform rotate-180 pointer-events-none" />
 
@@ -237,7 +237,7 @@ export default function Reviews() {
               </div>
 
               {/* Review Text */}
-              <p className="text-lg md:text-xl italic font-light text-zinc-800 leading-relaxed max-w-3xl font-serif">
+              <p className="text-lg md:text-xl italic font-light text-zinc-800 dark:text-zinc-200 leading-relaxed max-w-3xl font-serif">
                 "{current.text}"
               </p>
 
@@ -252,14 +252,14 @@ export default function Reviews() {
                 </div>
 
                 <div className="text-center">
-                  <h4 className="text-base font-bold text-zinc-900 tracking-wide">
+                  <h4 className="text-base font-bold text-zinc-900 dark:text-white tracking-wide">
                     {current.name}
                   </h4>
                   <div className="flex items-center justify-center gap-1.5 mt-0.5">
                     {current.role ? (
                       <>
-                        <p className="text-xs text-zinc-500">{current.role}</p>
-                        <span className="text-[10px] text-zinc-300">•</span>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{current.role}</p>
+                        <span className="text-[10px] text-zinc-300 dark:text-zinc-600">•</span>
                       </>
                     ) : null}
                     <span className="text-[10px] font-semibold text-gold tracking-wider uppercase">Verified Customer</span>
@@ -279,7 +279,7 @@ export default function Reviews() {
                   className={`transition-all duration-300 cursor-pointer rounded-full ${
                     activeReviewIndex === idx
                       ? "w-8 h-2.5 bg-gold"
-                      : "w-2.5 h-2.5 bg-zinc-200 hover:bg-zinc-300"
+                      : "w-2.5 h-2.5 bg-zinc-200 dark:bg-white/15 hover:bg-zinc-300 dark:hover:bg-white/25"
                   }`}
                   aria-label={`Go to review slide ${idx + 1}`}
                 />
@@ -289,17 +289,17 @@ export default function Reviews() {
             <div className="flex items-center justify-center gap-4 mt-10">
               <button
                 onClick={() => goTo((prev) => (prev - 1 + reviews.length) % reviews.length)}
-                className="p-2 rounded-full border border-zinc-200 text-zinc-500 hover:text-gold hover:border-gold/40 transition cursor-pointer"
+                className="p-2 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-gold hover:border-gold/40 transition cursor-pointer"
                 aria-label="Previous review"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-xs font-medium text-zinc-500 tabular-nums">
+              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums">
                 {Math.min(activeReviewIndex + 1, reviews.length)} / {reviews.length}
               </span>
               <button
                 onClick={() => goTo((prev) => (prev + 1) % reviews.length)}
-                className="p-2 rounded-full border border-zinc-200 text-zinc-500 hover:text-gold hover:border-gold/40 transition cursor-pointer"
+                className="p-2 rounded-full border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-gold hover:border-gold/40 transition cursor-pointer"
                 aria-label="Next review"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -319,34 +319,34 @@ export default function Reviews() {
                 <PenLine className="w-4 h-4" />
                 Share your experience
               </button>
-              <p className="mt-3 text-xs text-zinc-500 font-light">
+              <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400 font-light">
                 Travelled with us? Your words help fellow travellers choose better.
               </p>
             </div>
           ) : (
-            <div className="rounded-3xl bg-white border border-zinc-200 shadow-xl p-6 md:p-10 max-w-2xl mx-auto">
+            <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xl p-6 md:p-10 max-w-2xl mx-auto">
               {submitted ? (
                 /* Thank-you state */
                 <div className="text-center py-6 space-y-4">
                   <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-gold-hover via-gold to-gold-dark flex items-center justify-center shadow-lg shadow-gold/30">
                     <Check className="w-8 h-8 text-white stroke-[3]" />
                   </div>
-                  <h3 className="text-2xl font-serif font-bold text-zinc-900">
+                  <h3 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white">
                     Thank you{thankName ? `, ${thankName}` : ""}!
                   </h3>
-                  <p className="text-sm text-zinc-600 font-light max-w-sm mx-auto">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 font-light max-w-sm mx-auto">
                     Your review is live in the carousel above. We're delighted you cruised with us.
                   </p>
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <button
                       onClick={() => setSubmitted(false)}
-                      className="rounded-full border border-zinc-200 px-5 py-2 text-xs font-semibold text-zinc-600 hover:border-gold/40 hover:text-gold transition cursor-pointer"
+                      className="rounded-full border border-zinc-200 dark:border-white/10 px-5 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:border-gold/40 hover:text-gold transition cursor-pointer"
                     >
                       Write another
                     </button>
                     <button
                       onClick={closeForm}
-                      className="rounded-full bg-zinc-900 px-6 py-2 text-xs font-semibold text-white hover:bg-zinc-700 transition cursor-pointer"
+                      className="rounded-full bg-zinc-900 dark:bg-white/10 px-6 py-2 text-xs font-semibold text-white hover:bg-zinc-700 dark:hover:bg-white/20 transition cursor-pointer"
                     >
                       Done
                     </button>
@@ -357,13 +357,13 @@ export default function Reviews() {
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="flex items-start justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-serif font-bold text-zinc-900">Share your experience</h3>
-                      <p className="text-xs text-zinc-500 font-light mt-1">It takes less than a minute.</p>
+                      <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white">Share your experience</h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-light mt-1">It takes less than a minute.</p>
                     </div>
                     <button
                       type="button"
                       onClick={closeForm}
-                      className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition cursor-pointer"
+                      className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/10 transition cursor-pointer"
                       aria-label="Close review form"
                     >
                       <X className="w-4 h-4" />
@@ -372,7 +372,7 @@ export default function Reviews() {
 
                   {/* Star picker */}
                   <div className="mb-5">
-                    <label className="block text-xs font-semibold tracking-wide text-zinc-700 uppercase mb-2">
+                    <label className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 uppercase mb-2">
                       Your rating
                     </label>
                     <div className="flex items-center gap-3">
@@ -394,7 +394,7 @@ export default function Reviews() {
                               className={`w-8 h-8 transition-all duration-150 ${
                                 (hoverRating || rating) >= v
                                   ? "fill-gold text-gold scale-110 drop-shadow-[0_0_6px_rgba(212,175,55,0.45)]"
-                                  : "text-zinc-300 group-hover:text-zinc-400"
+                                  : "text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500"
                               }`}
                             />
                           </button>
@@ -409,7 +409,7 @@ export default function Reviews() {
                   {/* Name + trip */}
                   <div className="grid sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label htmlFor="review-name" className="block text-xs font-semibold tracking-wide text-zinc-700 uppercase mb-2">
+                      <label htmlFor="review-name" className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 uppercase mb-2">
                         Your name
                       </label>
                       <input
@@ -424,7 +424,7 @@ export default function Reviews() {
                       />
                     </div>
                     <div>
-                      <label htmlFor="review-role" className="block text-xs font-semibold tracking-wide text-zinc-700 uppercase mb-2">
+                      <label htmlFor="review-role" className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 uppercase mb-2">
                         Your trip <span className="text-zinc-400 normal-case font-normal">(optional)</span>
                       </label>
                       <input
@@ -442,7 +442,7 @@ export default function Reviews() {
                   {/* Message */}
                   <div className="mb-5">
                     <div className="flex items-baseline justify-between mb-2">
-                      <label htmlFor="review-text" className="block text-xs font-semibold tracking-wide text-zinc-700 uppercase">
+                      <label htmlFor="review-text" className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 uppercase">
                         Your review
                       </label>
                       <span className={`text-[11px] tabular-nums ${text.length > TEXT_MAX - 50 ? "text-amber-600" : "text-zinc-400"}`}>
@@ -468,7 +468,7 @@ export default function Reviews() {
 
                   {/* Error + submit */}
                   {formError && (
-                    <p role="alert" className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+                    <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl px-4 py-2.5">
                       {formError}
                     </p>
                   )}
@@ -476,7 +476,7 @@ export default function Reviews() {
                     <button
                       type="button"
                       onClick={closeForm}
-                      className="rounded-full px-5 py-2.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 transition cursor-pointer"
+                      className="rounded-full px-5 py-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition cursor-pointer"
                     >
                       Cancel
                     </button>

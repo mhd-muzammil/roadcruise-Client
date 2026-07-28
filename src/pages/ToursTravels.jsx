@@ -48,13 +48,13 @@ export default function ToursTravels({ onBookNowClick }) {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-serif font-bold text-zinc-900 leading-tight tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-zinc-900 dark:text-white leading-tight tracking-tight">
             Crafting <br className="sm:hidden" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-gold-hover to-gold italic font-normal text-glow-gold ml-0 sm:ml-2">
               Extraordinary Journeys
             </span>
           </h1>
-          <p className="text-base md:text-lg max-w-3xl mx-auto text-zinc-700 font-normal leading-relaxed">
+          <p className="text-base md:text-lg max-w-3xl mx-auto text-zinc-700 dark:text-zinc-300 font-normal leading-relaxed">
             Explore our curated holiday packages or select beautiful travel destinations for your next premium getaway.
           </p>
 

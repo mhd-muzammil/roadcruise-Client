@@ -70,7 +70,7 @@ export default function Contact() {
 
   const CONTACT_CARDS = [
     {
-      icon: Phone, label: "Phone", value: "+91 88867 67467", href: "tel:+918886767467",
+      icon: Phone, label: "Phone", value: "+91 73388 99062", href: "tel:+917338899062",
       sub: "Also +91 73388 99063 · 24/7 helpline",
     },
     {
@@ -78,7 +78,7 @@ export default function Contact() {
       sub: "Enquiries & support",
     },
     {
-      icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/918886767467",
+      icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/917338899062",
       sub: "Fastest response",
     },
     {

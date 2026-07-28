@@ -14,7 +14,22 @@
 
   --animate-pulse-slow: pulse-slow 8s ease-in-out infinite;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-promo-fade: promo-fade 0.35s ease-out both;
+  --animate-promo-pop: promo-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes promo-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes promo-pop {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   @keyframes pulse-slow {
     0%, 100% { opacity: 0.35; transform: scale(1); }
     50% { opacity: 0.6; transform: scale(1.05); }
@@ -65,6 +80,9 @@
 ::-webkit-scrollbar-track {
   background: #f4f4f5;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #09090b;
+}
 ::-webkit-scrollbar-thumb {
   background: rgba(212, 175, 55, 0.45);
   border-radius: 9999px;
@@ -76,4 +94,9 @@
 /* Smooth HTML scroll */
 html {
   scroll-behavior: smooth;
+}
+
+/* Native form controls (selects, date/time pickers) match the dark theme */
+html.dark {
+  color-scheme: dark;
 }
