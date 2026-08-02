@@ -221,6 +221,13 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-zinc-400">{meta.canPay ? "Amount Due" : "Fare"}</p>
                       <p className="text-lg font-serif font-bold text-gold">₹{Number(b.fare || 0).toLocaleString("en-IN")}</p>
+                      {/* Advance-plan bookings: 20% collected online, rest to the driver. */}
+                      {Number(b.advanceAmount) > 0 && (
+                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                          ₹{Number(b.advanceAmount).toLocaleString("en-IN")} advance
+                          {" · "}₹{(Number(b.fare || 0) - Number(b.advanceAmount)).toLocaleString("en-IN")} to driver
+                        </p>
+                      )}
                       <p className="text-[10px] text-zinc-400 mt-0.5">{b.paymentMethod}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">

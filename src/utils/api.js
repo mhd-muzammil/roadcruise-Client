@@ -273,6 +273,30 @@ export const verifyPayment = async ({ orderId, paymentId, signature }) => {
   return res.json();
 };
 
+// --- Places (public geo proxy for the trip planner; no keys in the browser) ---
+
+/**
+ * Autocomplete suggestions for a partial place name. Returns an array of
+ * { id, name, label, lat, lon } (India-only, biased to the fleet's home base).
+ */
+export const searchPlaces = async (q) => {
+  const res = await fetch(`${BASE_URL}/places/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return throwError(res, "Place search is unavailable right now");
+  return res.json();
+};
+
+/**
+ * Driving route between two points. Returns { distanceKm, durationMin,
+ * estimated } — `estimated: true` means the road router was unreachable and
+ * the server answered with a road-factor straight-line approximation.
+ */
+export const getDrivingRoute = async ({ fromLat, fromLon, toLat, toLon }) => {
+  const qs = new URLSearchParams({ fromLat, fromLon, toLat, toLon });
+  const res = await fetch(`${BASE_URL}/places/route?${qs}`);
+  if (!res.ok) return throwError(res, "Could not calculate the route");
+  return res.json();
+};
+
 // --- Reviews (public — no auth) ---
 
 /**

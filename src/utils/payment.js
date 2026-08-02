@@ -14,17 +14,16 @@ export function loadRazorpay() {
 }
 
 /**
- * Pay for an EXISTING (unpaid) booking end-to-end. Creates/reuses the order,
- * opens the real Razorpay widget (or the mock preview when the gateway is in
- * mock mode), verifies server-side, and resolves once the booking is paid.
+ * Open a checkout for an ALREADY-CREATED payment order and verify it
+ * server-side. Handles both the real Razorpay widget and the mock preview
+ * gateway. Shared by "Pay Now" on My Bookings and the trip-planner checkout.
  *
- * Resolves { status: "paid" | "already_paid" }.
- * Rejects with an Error (e.g. user dismissed the widget, verification failed).
+ * co       — the `checkout` object returned by the server.
+ * prefill  — { name, contact, email, description }.
+ *
+ * Resolves { status: "paid" }; rejects on dismissal/verification failure.
  */
-export async function payForBooking(booking, user) {
-  const order = await createPaymentOrder(booking.id);
-  if (order.alreadyPaid) return { status: "already_paid" };
-  const co = order.checkout;
+export async function payWithCheckout(co, prefill = {}) {
   if (!co || !co.orderId) throw new Error("Could not start payment for this booking.");
 
   // Mock gateway (no real Razorpay account): use the signed preview checkout.
@@ -44,8 +43,8 @@ export async function payForBooking(booking, user) {
       amount: co.amount,
       currency: co.currency,
       name: "Road Cruise",
-      description: booking.item || "Booking",
-      prefill: { name: booking.name || "", contact: booking.phone || "", email: user?.email || "" },
+      description: prefill.description || "Booking",
+      prefill: { name: prefill.name || "", contact: prefill.contact || "", email: prefill.email || "" },
       theme: { color: "#D4AF37" },
       handler: async (resp) => {
         try {
@@ -62,5 +61,20 @@ export async function payForBooking(booking, user) {
       modal: { ondismiss: () => reject(new Error("Payment was not completed.")) },
     });
     rzp.open();
+  });
+}
+
+/**
+ * Pay for an EXISTING (unpaid) booking end-to-end. Creates/reuses the order,
+ * then runs the shared checkout. Resolves { status: "paid" | "already_paid" }.
+ */
+export async function payForBooking(booking, user) {
+  const order = await createPaymentOrder(booking.id);
+  if (order.alreadyPaid) return { status: "already_paid" };
+  return payWithCheckout(order.checkout, {
+    name: booking.name || "",
+    contact: booking.phone || "",
+    email: user?.email || "",
+    description: booking.item || "Booking",
   });
 }
