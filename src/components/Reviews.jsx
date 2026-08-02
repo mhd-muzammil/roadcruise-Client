@@ -2,44 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Star, Quote, Check, X, Loader2, PenLine, Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { getReviews, submitReview } from "../utils/api";
 
-// Shown instantly on mount and kept whenever the API is unreachable (e.g. dev
-// without the backend) so the section never looks broken or empty. The server
-// seeds these same four reviews, so the swap-in is seamless.
-const FALLBACK_REVIEWS = [
-  {
-    id: "fallback-4",
-    name: "Divya Shankar",
-    role: "Business Owner",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120",
-    text: "Amazing support desk. We needed to extend our Ooty tour by a day at midnight, and it was handled in minutes. The customer support is top-notch."
-  },
-  {
-    id: "fallback-3",
-    name: "Rakesh Iyer",
-    role: "Regular Tourist",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=120",
-    text: "Extremely clean Innova Crysta. Very neat driver with proper uniform and tracking setup. Road Cruise definitely makes every journey feel like a true cruise."
-  },
-  {
-    id: "fallback-2",
-    name: "Priya Menon",
-    role: "Family Traveller",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120",
-    text: "Booked Kodaikanal package for family. Transparent pricing, excellent hotels, and hassle-free transit. The booking process was very smooth and transparent."
-  },
-  {
-    id: "fallback-1",
-    name: "Arvind Kumar",
-    role: "Corporate Executive",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=120",
-    text: "The Mercedes E-Class was impeccable. The driver was extremely professional, knew the routes perfectly, and made our executive business tour in Chennai completely hassle-free."
-  }
-];
-
 const RATING_LABELS = { 1: "Poor", 2: "Fair", 3: "Good", 4: "Very good", 5: "Excellent" };
 const TEXT_MIN = 10;
 const TEXT_MAX = 600;
@@ -71,7 +33,9 @@ function ReviewerAvatar({ review }) {
 }
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState(FALLBACK_REVIEWS);
+  // Only genuine customer reviews from the server — no built-in placeholders.
+  const [reviews, setReviews] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
 
@@ -87,17 +51,18 @@ export default function Reviews() {
   const [submitted, setSubmitted] = useState(false);
   const [thankName, setThankName] = useState("");
 
-  // Load live reviews; on any failure silently keep the built-in fallback.
+  // Load live reviews; on failure the section simply shows the invite state.
   useEffect(() => {
     let alive = true;
     getReviews()
       .then((list) => {
-        if (alive && Array.isArray(list) && list.length > 0) {
+        if (alive && Array.isArray(list)) {
           setReviews(list);
           setActiveReviewIndex(0);
         }
       })
-      .catch(() => { /* offline / dev without backend — fallback stays */ });
+      .catch(() => { /* offline / dev without backend — invite state shows */ })
+      .finally(() => { if (alive) setLoaded(true); });
     return () => { alive = false; };
   }, []);
 
@@ -124,7 +89,7 @@ export default function Reviews() {
     return (reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1);
   }, [reviews]);
 
-  const current = reviews[Math.min(activeReviewIndex, reviews.length - 1)] || FALLBACK_REVIEWS[0];
+  const current = reviews.length > 0 ? reviews[Math.min(activeReviewIndex, reviews.length - 1)] : null;
   const activeLabel = RATING_LABELS[hoverRating || rating];
   const trimmedTextLen = text.trim().length;
 
@@ -208,8 +173,12 @@ export default function Reviews() {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
             </svg>
             <span className="text-[10px] font-bold tracking-widest text-gold uppercase">Customer Reviews</span>
-            <span className="text-[10px] text-zinc-400">·</span>
-            <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">{averageRating} ★ Rating</span>
+            {reviews.length > 0 && (
+              <>
+                <span className="text-[10px] text-zinc-400">·</span>
+                <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">{averageRating} ★ Rating</span>
+              </>
+            )}
           </div>
 
           <h2 className="text-3xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white leading-tight">
@@ -220,7 +189,27 @@ export default function Reviews() {
           </p>
         </div>
 
-        {/* Sliding reviews Card */}
+        {/* Sliding reviews card — spinner while loading, invite when empty */}
+        {!loaded ? (
+          <div className="flex items-center justify-center min-h-[280px] rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xl max-w-4xl mx-auto">
+            <Loader2 className="w-6 h-6 animate-spin text-gold/60" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="relative overflow-hidden p-8 md:p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xl max-w-4xl mx-auto text-center">
+            <Quote className="absolute top-6 left-6 w-16 h-16 text-gold/10 transform rotate-180 pointer-events-none" />
+            <div className="py-10 space-y-3">
+              <div className="flex items-center justify-center gap-1 text-gold/40">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5" />
+                ))}
+              </div>
+              <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white">Be the first to share your journey</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-light max-w-sm mx-auto">
+                Travelled with Road Cruise? Your experience helps fellow travellers choose better.
+              </p>
+            </div>
+          </div>
+        ) : (
         <div className="relative overflow-hidden p-8 md:p-12 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xl max-w-4xl mx-auto">
           {/* Quote Accent Icon */}
           <Quote className="absolute top-6 left-6 w-16 h-16 text-gold/10 transform rotate-180 pointer-events-none" />
@@ -307,6 +296,7 @@ export default function Reviews() {
             </div>
           )}
         </div>
+        )}
 
         {/* Share your experience */}
         <div className="max-w-4xl mx-auto mt-8">
