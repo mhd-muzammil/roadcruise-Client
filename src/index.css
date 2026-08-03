@@ -100,3 +100,15 @@ html {
 html.dark {
   color-scheme: dark;
 }
+
+/* Native <select> popups: Windows/Chromium paints the option list with its own
+   (often light) background while the options inherit the page text color — in
+   dark mode that meant white text on a white popup. Pin both explicitly. */
+select option {
+  background-color: #ffffff;
+  color: #18181b;
+}
+html.dark select option {
+  background-color: #18181b;
+  color: #fafafa;
+}
