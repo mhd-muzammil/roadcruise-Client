@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
   CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
-  Pencil, X,
+  Pencil, Download, X,
 } from "lucide-react";
-import { fetchBookings, cancelBooking, modifyBooking } from "../utils/api";
+import { fetchBookings, cancelBooking, modifyBooking, downloadBookingInvoice } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
 
@@ -180,6 +180,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
   const [error, setError] = useState("");
   const [payingId, setPayingId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [editingBooking, setEditingBooking] = useState(null);
   const [notice, setNotice] = useState("");
 
@@ -251,6 +252,33 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
     setNotice(`Booking ${updated.id} has been updated. A confirmation email is on its way.`);
     setError("");
     await load(); // refresh details
+  };
+
+  const handleInvoice = async (booking) => {
+    setNotice("");
+    setError("");
+    setDownloadingId(booking.id);
+    try {
+      const blob = await downloadBookingInvoice(booking.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `RoadCruise-Invoice-${booking.id}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setNotice(`Invoice for ${booking.id} downloaded — open it and use "Print / Save as PDF".`);
+    } catch (err) {
+      if (err?.status === 401) {
+        onSessionExpired?.();
+        setError("Your session has expired. Please sign in again.");
+      } else {
+        setError(err?.message || "Could not download the invoice. Please try again.");
+      }
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   // ---- Not signed in ----
@@ -328,6 +356,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
             const isPackage = b.category === "package" || b.packageName;
             const paying = payingId === b.id;
             const cancelling = cancellingId === b.id;
+            const downloading = downloadingId === b.id;
             const canCancel = b.status !== "Cancelled" && b.status !== "Completed";
             const canEdit = canCancel; // same rule: an active, not-yet-finished trip
             return (
@@ -393,6 +422,16 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                           className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-gold disabled:opacity-60 transition-colors whitespace-nowrap"
                         >
                           <Pencil className="w-3.5 h-3.5" /> Edit trip
+                        </button>
+                      )}
+                      {b.status !== "Cancelled" && (
+                        <button
+                          onClick={() => handleInvoice(b)}
+                          disabled={downloading}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-gold disabled:opacity-60 transition-colors whitespace-nowrap"
+                        >
+                          {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          {downloading ? "Preparing…" : "Invoice"}
                         </button>
                       )}
                       {canCancel && (

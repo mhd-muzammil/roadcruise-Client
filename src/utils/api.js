@@ -226,6 +226,17 @@ export const modifyBooking = async (id, changes) => {
   return res.json();
 };
 
+/**
+ * Download the booking's invoice (owner only) — a self-contained HTML document
+ * (print-friendly; "Print → Save as PDF" in the browser gives a PDF). Returns
+ * a Blob the caller turns into a download link.
+ */
+export const downloadBookingInvoice = async (id) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/invoice`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not download the invoice");
+  return res.blob();
+};
+
 // --- Contact / enquiry (public — no auth) ---
 
 /**
