@@ -210,6 +210,22 @@ export const cancelBooking = async (id) => {
   return res.json();
 };
 
+/**
+ * Modify a booking's trip details (owner only; staff can modify any). Editable
+ * fields: fromDate, toDate, pickup, drop, passengers, pickupTime, notes — the
+ * fare/vehicle/status never change here. The server notifies the customer and
+ * the business inbox. Returns the updated booking.
+ */
+export const modifyBooking = async (id, changes) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/modify`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(changes)
+  });
+  if (!res.ok) return throwError(res, "Could not update your booking");
+  return res.json();
+};
+
 // --- Contact / enquiry (public — no auth) ---
 
 /**

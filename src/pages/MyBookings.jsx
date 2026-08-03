@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
   CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
+  Pencil, X,
 } from "lucide-react";
-import { fetchBookings, cancelBooking } from "../utils/api";
+import { fetchBookings, cancelBooking, modifyBooking } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
 
@@ -39,6 +40,139 @@ function Row({ icon: Icon, label, value }) {
   );
 }
 
+/**
+ * Modal to edit a booking's trip details. Only trip fields are editable — the
+ * fare, vehicle and payment stay as booked (the server enforces the same).
+ */
+function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
+  const isPackage = booking.category === "package" || booking.packageName;
+  const [form, setForm] = useState({
+    fromDate: booking.fromDate || "",
+    toDate: booking.toDate || "",
+    pickup: booking.pickup || "",
+    drop: booking.drop || "",
+    passengers: booking.passengers || "",
+    pickupTime: booking.pickupTime || "",
+    notes: booking.notes || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (name) => (e) => setForm((prev) => ({ ...prev, [name]: e.target.value }));
+
+  const handleSave = async () => {
+    setError("");
+    if (!form.fromDate || !form.toDate) {
+      setError("Please choose both trip dates.");
+      return;
+    }
+    if (form.toDate < form.fromDate) {
+      setError("The trip end date cannot be before the start date.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await modifyBooking(booking.id, form);
+      onSaved(updated);
+    } catch (err) {
+      if (err?.status === 401) {
+        onSessionExpired?.();
+        setError("Your session has expired. Please sign in again.");
+      } else {
+        setError(err?.message || "Could not update your booking. Please try again.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fieldCls =
+    "w-full px-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-gold transition-all";
+  const labelCls = "text-[11px] font-semibold text-zinc-500 dark:text-zinc-400";
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-label={`Edit booking ${booking.id}`}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={saving ? undefined : onClose} />
+      <div className="relative w-full max-w-lg max-h-full overflow-y-auto rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/5">
+          <div>
+            <h2 className="text-lg font-serif font-bold text-zinc-900 dark:text-white">Edit Trip</h2>
+            <p className="text-[11px] font-mono text-zinc-400">Ref: {booking.id}</p>
+          </div>
+          <button onClick={onClose} disabled={saving} aria-label="Close"
+            className="p-2 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" /><p className="text-xs font-medium">{error}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="edit-fromDate" className={labelCls}>From date *</label>
+              <input id="edit-fromDate" type="date" value={form.fromDate} onChange={set("fromDate")} className={fieldCls} />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="edit-toDate" className={labelCls}>To date *</label>
+              <input id="edit-toDate" type="date" value={form.toDate} min={form.fromDate || undefined} onChange={set("toDate")} className={fieldCls} />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="edit-pickup" className={labelCls}>Pickup location</label>
+            <input id="edit-pickup" type="text" value={form.pickup} onChange={set("pickup")} placeholder="Pickup address / area" className={fieldCls} />
+          </div>
+
+          {!isPackage && (
+            <div className="space-y-1.5">
+              <label htmlFor="edit-drop" className={labelCls}>Drop location</label>
+              <input id="edit-drop" type="text" value={form.drop} onChange={set("drop")} placeholder="Drop address / area" className={fieldCls} />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="edit-passengers" className={labelCls}>Passengers</label>
+              <input id="edit-passengers" type="number" min="1" value={form.passengers} onChange={set("passengers")} placeholder="e.g. 4" className={fieldCls} />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="edit-pickupTime" className={labelCls}>Pickup time</label>
+              <input id="edit-pickupTime" type="time" value={form.pickupTime} onChange={set("pickupTime")} className={fieldCls} />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="edit-notes" className={labelCls}>Special requests</label>
+            <textarea id="edit-notes" rows="3" value={form.notes} onChange={set("notes")}
+              placeholder="Anything the driver / our team should know…" className={`${fieldCls} resize-none`} />
+          </div>
+
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+            The fare, vehicle and payment stay as booked. Our team is notified of your changes — for a different vehicle or fare, please cancel and re-book or call us.
+          </p>
+
+          <div className="flex items-center justify-end gap-3 pt-1">
+            <button onClick={onClose} disabled={saving}
+              className="px-5 py-2.5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 hover:border-gold hover:text-gold font-bold rounded-full text-xs uppercase tracking-wider transition-all">
+              Cancel
+            </button>
+            <button onClick={handleSave} disabled={saving}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-gold hover:bg-gold-hover disabled:opacity-60 text-zinc-950 font-bold rounded-full text-xs uppercase tracking-wider transition-all shadow-md">
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function MyBookings({ currentUser, onAuthClick, onSessionExpired }) {
   useDocumentMeta({ title: "My Bookings | Road Cruise", noindex: true });
   const [bookings, setBookings] = useState([]);
@@ -46,6 +180,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
   const [error, setError] = useState("");
   const [payingId, setPayingId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [editingBooking, setEditingBooking] = useState(null);
   const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
@@ -109,6 +244,13 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
     } finally {
       setCancellingId(null);
     }
+  };
+
+  const handleEditSaved = async (updated) => {
+    setEditingBooking(null);
+    setNotice(`Booking ${updated.id} has been updated. A confirmation email is on its way.`);
+    setError("");
+    await load(); // refresh details
   };
 
   // ---- Not signed in ----
@@ -187,6 +329,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
             const paying = payingId === b.id;
             const cancelling = cancellingId === b.id;
             const canCancel = b.status !== "Cancelled" && b.status !== "Completed";
+            const canEdit = canCancel; // same rule: an active, not-yet-finished trip
             return (
               <div key={b.id} className="rounded-2xl border border-zinc-200 dark:border-white/5 bg-white dark:bg-white/5 overflow-hidden">
                 <div className="p-5 flex flex-col md:flex-row md:items-start gap-5">
@@ -243,6 +386,15 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                       ) : meta.tone === "emerald" ? (
                         <span className="inline-flex items-center gap-1.5 text-emerald-500 text-xs font-bold"><CheckCircle className="w-4 h-4" /> Paid</span>
                       ) : null}
+                      {canEdit && (
+                        <button
+                          onClick={() => setEditingBooking(b)}
+                          disabled={paying || cancelling}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-gold disabled:opacity-60 transition-colors whitespace-nowrap"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Edit trip
+                        </button>
+                      )}
                       {canCancel && (
                         <button
                           onClick={() => handleCancel(b)}
@@ -261,6 +413,15 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
           })
         )}
       </div>
+
+      {editingBooking && (
+        <EditTripModal
+          booking={editingBooking}
+          onClose={() => setEditingBooking(null)}
+          onSaved={handleEditSaved}
+          onSessionExpired={onSessionExpired}
+        />
+      )}
     </div>
   );
 }
