@@ -152,8 +152,18 @@ export default function PlaceAutocomplete({ value, onSelect, placeholder = "Ente
               >
                 <MapPin className="w-4 h-4 text-gold shrink-0 mt-0.5" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                    {r.name}
+                  <span className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                      {r.name}
+                    </span>
+                    {/* Many places share a name — the town of Vandalur and its
+                        railway station are both just "Vandalur" in OSM — so the
+                        kind is what tells them apart. */}
+                    {r.kind && (
+                      <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-gold/10 text-gold border border-gold/20">
+                        {r.kind}
+                      </span>
+                    )}
                   </span>
                   <span className="block text-xs text-zinc-500 dark:text-zinc-400 leading-snug">
                     {r.label}
