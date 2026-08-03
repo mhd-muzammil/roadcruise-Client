@@ -461,10 +461,11 @@ function VehicleCard({ v, busy, withBusy }) {
         </div>
       </div>
 
-      {/* Held units — admin frees them here after the trip */}
+      {/* Held units — they free automatically after each trip's end date;
+          the "Free" button releases one early (e.g. a trip that ended sooner). */}
       {v.heldBookings && v.heldBookings.length > 0 && (
         <div className="border-t border-zinc-200 dark:border-white/5 bg-zinc-50/60 dark:bg-zinc-950/30 p-3 space-y-1.5">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Currently held by</p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Currently held by (auto-frees after trip end)</p>
           {v.heldBookings.map((h) => (
             <div key={h.id} className="flex items-center justify-between gap-2 text-[11px]">
               <span className="text-zinc-600 dark:text-zinc-300 truncate">
