@@ -35,9 +35,21 @@ const nativeCls =
  * the URL, so results are shareable and refresh-safe.
  *
  * variant "hero"  — tab pills over a single horizontal bar (landing page)
- * variant "panel" — compact vertical card (results-page "modify search")
+ * variant "panel" — compact vertical card (results-page "modify search", and
+ *                   the header's "Book Now" dialog)
+ *
+ * hideTypeSelect — panel only: the caller already picked the trip type in its
+ *                  own step (the Book Now dialog), so the in-form selector is
+ *                  redundant.
+ * onSubmitted    — fired after a valid search navigates, so a host dialog can
+ *                  close itself.
  */
-export default function TripPlanner({ variant = "hero", initial = null }) {
+export default function TripPlanner({
+  variant = "hero",
+  initial = null,
+  hideTypeSelect = false,
+  onSubmitted,
+}) {
   const navigate = useNavigate();
   const [type, setType] = useState(initial?.type || "airport");
   const [pickup, setPickup] = useState(initial?.pickup || null);
@@ -86,6 +98,7 @@ export default function TripPlanner({ variant = "hero", initial = null }) {
     if (!validate()) return;
     const search = { type, pickup, drop, date, time, returnDate, returnTime, pkg };
     navigate(`/book/results?${encodeSearch(search)}`);
+    onSubmitted?.(search);
   };
 
   const firstError = Object.values(errors).find(Boolean);
@@ -94,21 +107,23 @@ export default function TripPlanner({ variant = "hero", initial = null }) {
   if (variant === "panel") {
     return (
       <form onSubmit={handleSubmit} className="space-y-3 text-left">
-        <div className="relative">
-          <select
-            value={type}
-            onChange={(e) => switchType(e.target.value)}
-            aria-label="Trip type"
-            className="w-full appearance-none bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-xl py-3 pl-4 pr-9 text-sm font-semibold text-zinc-900 dark:text-white cursor-pointer"
-          >
-            {TRIP_TYPES.map((t) => (
-              <option key={t.key} value={t.key} className="bg-white dark:bg-zinc-950">
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gold pointer-events-none" />
-        </div>
+        {!hideTypeSelect && (
+          <div className="relative">
+            <select
+              value={type}
+              onChange={(e) => switchType(e.target.value)}
+              aria-label="Trip type"
+              className="w-full appearance-none bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-xl py-3 pl-4 pr-9 text-sm font-semibold text-zinc-900 dark:text-white cursor-pointer"
+            >
+              {TRIP_TYPES.map((t) => (
+                <option key={t.key} value={t.key} className="bg-white dark:bg-zinc-950">
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gold pointer-events-none" />
+          </div>
+        )}
 
         <div className="rounded-xl border border-zinc-200 dark:border-white/10 divide-y divide-zinc-200 dark:divide-white/10">
           <PlannerField label={type === "hourly" ? "Pickup Location" : "Pickup"} error={errors.pickup}>

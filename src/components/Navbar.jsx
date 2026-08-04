@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Phone, Menu, X, ChevronDown } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 
-export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLogout }) {
+// onPlanTrip — opens the trip-type dialog (Airport / One-Way / Round-Trip /
+// Hourly), which is what "Book Now" in the header now does. The old free-form
+// enquiry modal is still reachable from inside that dialog.
+export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -44,20 +47,18 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
+        {/* The brand asset already carries the wordmark and tagline, so the
+            header shows the lockup alone — no duplicated "ROAD CRUISE" text.
+            It keeps its brand-yellow field (the road graphic is white and the
+            wordmark black, so both need it to stay legible in either theme). */}
+        <Link to="/" className="group shrink-0" aria-label="Road Cruise — home">
           <img
             src="/logo.png"
-            alt="Road Cruise"
-            className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            alt="Road Cruise — feel like cruise"
+            width="760"
+            height="330"
+            className="h-10 md:h-11 w-auto object-contain rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105"
           />
-          <div>
-            <span className="font-serif text-xl font-bold tracking-widest text-zinc-900 dark:text-white group-hover:text-gold transition-colors duration-300">
-              ROAD CRUISE
-            </span>
-            <span className="block text-[8px] tracking-[0.25em] text-zinc-500 dark:text-zinc-400 -mt-1 uppercase">
-              Premium Journeys
-            </span>
-          </div>
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -140,7 +141,7 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
           )}
 
           <button
-            onClick={() => onBookNowClick("General Query", "general")}
+            onClick={onPlanTrip}
             className="px-6 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-transparent border border-gold text-gold hover:bg-gold hover:text-zinc-950 active:scale-[0.98] transition-all duration-300 cursor-pointer"
           >
             Book Now
@@ -275,7 +276,7 @@ export default function Navbar({ onBookNowClick, currentUser, onAuthClick, onLog
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onBookNowClick("General Query", "general");
+                onPlanTrip();
               }}
               className="px-6 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-gold text-zinc-950 hover:bg-gold-hover transition-all"
             >

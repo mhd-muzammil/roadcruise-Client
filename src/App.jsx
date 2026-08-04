@@ -13,6 +13,7 @@ import AuthModal from "./components/AuthModal";
 import ScrollToTop from "./components/common/ScrollToTop";
 import FloatingContact from "./components/common/FloatingContact";
 import PromoPopup from "./components/PromoPopup";
+const TripPlannerModal = lazy(() => import("./components/booking/TripPlannerModal"));
 
 // Page Imports — primary landing routes stay eager; the rest are
 // code-split so their JS never blocks first paint of the home page.
@@ -50,6 +51,9 @@ function AppContent() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  // Header "Book Now" -> trip-type dialog -> the same fare/checkout flow the
+  // hero trip planner uses.
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState(() => {
@@ -100,7 +104,7 @@ function AppContent() {
       <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-bg-dark dark:text-white font-sans selection:bg-gold selection:text-zinc-950 overflow-x-hidden">
         {/* Sticky Luxury Navbar */}
         <Navbar
-          onBookNowClick={openBooking}
+          onPlanTrip={() => setIsPlannerOpen(true)}
           currentUser={currentUser}
           onAuthClick={() => setIsAuthOpen(true)}
           onLogout={handleLogout}
@@ -167,6 +171,15 @@ function AppContent() {
 
         {/* Admin-published travel-package popup — shows once per session */}
         <PromoPopup onBookNow={openBooking} />
+
+        {/* Header "Book Now": trip type first, then that type's search form */}
+        <Suspense fallback={null}>
+          <TripPlannerModal
+            isOpen={isPlannerOpen}
+            onClose={() => setIsPlannerOpen(false)}
+            onEnquiry={() => openBooking("General Query", "general")}
+          />
+        </Suspense>
 
         {/* Luxury Booking Dialog Modal */}
         <BookingModal
