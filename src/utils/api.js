@@ -68,6 +68,40 @@ export const registerUser = async (name, email, phone, password) => {
   return res.json();
 };
 
+// --- Phone (SMS) OTP login (public, rate-limited server-side) ---
+
+/**
+ * Step 1: ask the server to SMS a one-time code to a mobile number.
+ * Responds identically for known and unknown numbers — never branch the UI on
+ * whether an account exists, because the server deliberately does not say.
+ * `isNewUser` is safe to use only for cosmetics (e.g. asking for a name).
+ * A 429 here means the per-number resend cooldown is still running.
+ */
+export const requestPhoneOtp = async (phone) => {
+  const res = await fetch(`${BASE_URL}/auth/otp/request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone })
+  });
+  if (!res.ok) return throwError(res, "Could not send the code. Please try again.");
+  return res.json();
+};
+
+/**
+ * Step 2: exchange the code for a session. Returns the SAME shape as
+ * loginUser (user + accessToken + refreshToken), so callers store it identically.
+ * Creates the account on first successful verify.
+ */
+export const verifyPhoneOtp = async ({ phone, code, name }) => {
+  const res = await fetch(`${BASE_URL}/auth/otp/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, code, name })
+  });
+  if (!res.ok) return throwError(res, "That code is incorrect or has expired.");
+  return res.json();
+};
+
 // --- Password recovery (public, rate-limited server-side) ---
 
 /**

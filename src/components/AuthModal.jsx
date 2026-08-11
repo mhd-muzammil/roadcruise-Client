@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { loginUser, registerUser, requestPasswordReset } from "../utils/api";
+import { loginUser, registerUser, requestPasswordReset, requestPhoneOtp, verifyPhoneOtp } from "../utils/api";
 import GoogleSignInButton from "./common/GoogleSignInButton";
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [activeTab, setActiveTab] = useState("signin"); // "signin" | "signup" | "forgot"
+  const [activeTab, setActiveTab] = useState("signin"); // "signin" | "signup" | "forgot" | "phone" | "otp"
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -23,6 +23,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setActiveTab(tab);
     setErrors({});
     setResetSent(false);
+    // A half-typed code left behind a tab switch is how you get "wrong code"
+    // on a number the user already changed.
+    if (tab !== "otp") setOtpCode("");
+    if (tab !== "otp" && tab !== "phone") { setOtpPhone(""); setOtpName(""); setResendIn(0); }
   };
 
   useEffect(() => {
@@ -38,6 +42,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setShowPassword(false);
       setSubmitting(false);
       setResetSent(false);
+      setOtpPhone("");
+      setOtpCode("");
+      setOtpName("");
+      setOtpIsNewUser(false);
+      setResendIn(0);
     }
   }, [isOpen]);
 
@@ -46,6 +55,81 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   // re-running that effect and re-rendering the Google iframe — which makes the
   // whole modal jitter while typing.
   const handleGoogleError = useCallback((msg) => setErrors({ general: msg }), []);
+
+  // ---- Phone (SMS) OTP login ------------------------------------------------
+  // Kept in its own state rather than folded into formData: the OTP screens
+  // share no fields with the email/password form, and mixing them made "what
+  // should clear on a tab switch" ambiguous.
+  const [otpPhone, setOtpPhone] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpName, setOtpName] = useState("");
+  const [otpIsNewUser, setOtpIsNewUser] = useState(false);
+  // Seconds until another code may be requested. Mirrors the server's per-number
+  // cooldown; the server re-checks it, this only keeps the UI honest.
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const t = setInterval(() => setResendIn((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [resendIn]);
+
+  // Digits only, capped at 10 — matches the server's normalizePhone, so a number
+  // that types cleanly here cannot come back rejected as malformed.
+  const handlePhoneInput = (e) => {
+    setOtpPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+    if (errors.otpPhone || errors.general) setErrors({});
+  };
+
+  const handleCodeInput = (e) => {
+    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+    if (errors.otpCode || errors.general) setErrors({});
+  };
+
+  const sendOtp = async (e) => {
+    e?.preventDefault();
+    if (!/^[6-9]\d{9}$/.test(otpPhone)) {
+      setErrors({ otpPhone: "Enter a valid 10-digit mobile number" });
+      return;
+    }
+    setSubmitting(true);
+    setErrors({});
+    try {
+      const info = await requestPhoneOtp(otpPhone);
+      setOtpIsNewUser(!!info.isNewUser);
+      setResendIn(info.resendInSec || 60);
+      setOtpCode("");
+      setActiveTab("otp");
+    } catch (err) {
+      setErrors({ general: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const confirmOtp = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      setErrors({ otpCode: "Enter the 6-digit code" });
+      return;
+    }
+    setSubmitting(true);
+    setErrors({});
+    try {
+      const payload = await verifyPhoneOtp({
+        phone: otpPhone,
+        code: otpCode,
+        name: otpIsNewUser ? otpName.trim() || undefined : undefined,
+      });
+      onAuthSuccess(payload);
+      onClose();
+    } catch (err) {
+      setErrors({ general: err.message });
+      setOtpCode("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -133,18 +217,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         
         {/* Header — tabs for sign in / sign up, or a titled bar for forgot-password */}
         <div className="flex border-b border-zinc-100 dark:border-white/5 relative">
-          {activeTab === "forgot" ? (
+          {activeTab === "forgot" || activeTab === "phone" || activeTab === "otp" ? (
             <div className="flex-1 flex items-center gap-2 py-4 pl-4 pr-12">
               <button
                 type="button"
-                onClick={() => switchTab("signin")}
+                onClick={() => switchTab(activeTab === "otp" ? "phone" : "signin")}
                 className="p-1 -ml-1 text-zinc-400 hover:text-gold rounded-full transition-colors"
-                aria-label="Back to sign in"
+                aria-label="Go back"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <span className="text-sm font-bold tracking-wider uppercase text-gold">
-                Reset Password
+                {activeTab === "forgot" ? "Reset Password" : activeTab === "phone" ? "Sign in with Mobile" : "Verify Your Number"}
               </span>
             </div>
           ) : (
@@ -203,6 +287,137 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 Back to Sign In
               </button>
             </div>
+          ) : activeTab === "phone" ? (
+            /* ---- Step 1: enter the mobile number ---- */
+            <form onSubmit={sendOtp} className="space-y-4">
+              {errors.general && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-semibold text-center leading-relaxed">
+                  {errors.general}
+                </div>
+              )}
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                We&apos;ll text you a 6-digit code. No password needed — if this is your
+                first time, your account is created automatically.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Mobile Number
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500">
+                    <Phone className="w-4 h-4" />
+                    <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">+91</span>
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    autoFocus
+                    value={otpPhone}
+                    onChange={handlePhoneInput}
+                    placeholder="98765 43210"
+                    className={`w-full bg-zinc-50 dark:bg-white/5 border ${
+                      errors.otpPhone ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+                    } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-[4.5rem] pr-4 text-sm tracking-wider text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all`}
+                  />
+                </div>
+                {errors.otpPhone && <p className="text-red-500 text-xs mt-1">{errors.otpPhone}</p>}
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full mt-2 bg-gradient-to-r from-gold via-gold-hover to-gold hover:opacity-90 text-zinc-950 font-bold py-3 rounded-xl text-sm tracking-wider uppercase shadow-lg shadow-gold/15 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {submitting ? "Sending…" : "Send Code"}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("signin")}
+                className="w-full text-xs font-semibold text-zinc-400 hover:text-gold transition-colors"
+              >
+                Use email and password instead
+              </button>
+            </form>
+          ) : activeTab === "otp" ? (
+            /* ---- Step 2: enter the code ---- */
+            <form onSubmit={confirmOtp} className="space-y-4">
+              {errors.general && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-semibold text-center leading-relaxed">
+                  {errors.general}
+                </div>
+              )}
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Enter the 6-digit code sent to{" "}
+                <span className="font-semibold text-zinc-700 dark:text-zinc-200">+91 {otpPhone}</span>.
+                It expires in 5 minutes.
+              </p>
+
+              {/* First-time users can name the account here. Optional by design: a
+                  blank field must never block someone from signing in. */}
+              {otpIsNewUser && (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                    Your Name <span className="normal-case font-normal text-zinc-400">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-400 dark:text-zinc-500">
+                      <User className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      value={otpName}
+                      onChange={(e) => setOtpName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  value={otpCode}
+                  onChange={handleCodeInput}
+                  placeholder="------"
+                  className={`w-full bg-zinc-50 dark:bg-white/5 border ${
+                    errors.otpCode ? "border-red-500" : "border-zinc-200 dark:border-white/10"
+                  } focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-3 px-4 text-center text-2xl font-bold tracking-[0.5em] text-zinc-900 dark:text-white placeholder-zinc-300 dark:placeholder-zinc-600 transition-all`}
+                />
+                {errors.otpCode && <p className="text-red-500 text-xs mt-1">{errors.otpCode}</p>}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || otpCode.length !== 6}
+                className="w-full mt-2 bg-gradient-to-r from-gold via-gold-hover to-gold hover:opacity-90 text-zinc-950 font-bold py-3 rounded-xl text-sm tracking-wider uppercase shadow-lg shadow-gold/15 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {submitting ? "Verifying…" : "Verify & Sign In"}
+              </button>
+
+              <div className="text-center">
+                {resendIn > 0 ? (
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                    Resend code in {resendIn}s
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={sendOtp}
+                    disabled={submitting}
+                    className="text-xs font-semibold text-gold hover:underline disabled:opacity-60"
+                  >
+                    Resend code
+                  </button>
+                )}
+              </div>
+            </form>
           ) : (
           <>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -365,6 +580,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 : "Create Luxury Account"}
             </button>
           </form>
+
+          {/* Mobile OTP sign-in — the path for customers who never set a
+              password. Hidden during password recovery. */}
+          {activeTab !== "forgot" && (
+            <button
+              type="button"
+              onClick={() => switchTab("phone")}
+              className="mt-3 w-full flex items-center justify-center gap-2 border border-zinc-200 dark:border-white/10 hover:border-gold/60 text-zinc-700 dark:text-zinc-200 font-semibold py-3 rounded-xl text-sm transition-all cursor-pointer"
+            >
+              <Phone className="w-4 h-4" />
+              Continue with Mobile Number
+            </button>
+          )}
 
           {/* Continue with Google — hidden during password recovery */}
           {activeTab !== "forgot" && (
