@@ -91,7 +91,7 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 text-xs font-semibold hover:border-gold transition-all cursor-pointer"
               >
                 <div className="w-5 h-5 rounded-full bg-gold text-zinc-950 flex items-center justify-center font-bold text-[10px]">
-                  {currentUser.name[0].toUpperCase()}
+                  {(currentUser.name?.[0] || "?").toUpperCase()}
                 </div>
                 <span className="text-zinc-900 dark:text-white max-w-[80px] truncate">{currentUser.name}</span>
                 <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
@@ -219,7 +219,7 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
               <div className="flex items-center justify-between p-2.5 bg-zinc-50 dark:bg-white/5 rounded-xl text-left">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-gold text-zinc-950 flex items-center justify-center font-bold text-xs">
-                    {currentUser.name[0].toUpperCase()}
+                    {(currentUser.name?.[0] || "?").toUpperCase()}
                   </div>
                   <div>
                     <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{currentUser.name}</p>
