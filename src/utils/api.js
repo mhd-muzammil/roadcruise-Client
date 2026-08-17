@@ -513,6 +513,21 @@ export const updatePromo = async (id, data) => {
   return res.json();
 };
 
+/**
+ * Announce a promo to existing customers (admin). Separate from publishing on
+ * purpose: publishing shows the popup and is reversible, this spends money and
+ * cannot be unsent. Safe to call twice — the server dedupes per customer per
+ * promo, so a repeat reaches nobody again.
+ */
+export const announcePromo = async (id) => {
+  const res = await fetch(`${BASE_URL}/promos/${id}/announce`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) return throwError(res, "Could not send the announcement");
+  return res.json();
+};
+
 export const deletePromo = async (id) => {
   const res = await fetch(`${BASE_URL}/promos/${id}`, { method: "DELETE", headers: authHeaders() });
   if (!res.ok) return throwError(res, "Failed to delete promotion");

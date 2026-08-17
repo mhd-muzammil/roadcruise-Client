@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
-  Megaphone, Eye, EyeOff, Clock,
+  Megaphone, Send, Eye, EyeOff, Clock,
 } from "lucide-react";
 import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
-  getAdminPromos, createPromo, updatePromo, deletePromo,
+  getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo,
 } from "../utils/api";
 
 const TABS = [
@@ -576,6 +576,26 @@ function PromosTab({ promos, reload }) {
     finally { setSaving(false); }
   };
 
+  /**
+   * Announce a package to existing customers. Confirmed explicitly because this
+   * is the one action on this screen that costs money and cannot be undone —
+   * Hide and Delete only affect the website. Re-announcing the same promo is a
+   * no-op server-side (deduped per customer per promo), so the guard is really
+   * about the FIRST accidental click.
+   */
+  const announce = async (p) => {
+    if (!confirm(`Send "${p.title}" to all customers?\n\nEmails go out immediately. This cannot be unsent.`)) return;
+    setBusyId(p.id);
+    try {
+      const r = await announcePromo(p.id);
+      alert(`Announcement queued for ${r.audience} customer${r.audience === 1 ? "" : "s"}.\n\n${r.note}`);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const withBusy = async (id, fn) => {
     setBusyId(id);
     try { await fn(); await reload(); } catch (e) { console.error(e); } finally { setBusyId(null); }
@@ -652,6 +672,14 @@ function PromosTab({ promos, reload }) {
                   <button onClick={() => withBusy(p.id, () => updatePromo(p.id, { active: !p.active }))}
                     className="px-2 py-1 text-[10px] font-bold bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 rounded flex items-center gap-1">
                     {p.active ? <><EyeOff className="w-3 h-3" /> Hide</> : <><Eye className="w-3 h-3" /> Go Live</>}
+                  </button>
+                  <button
+                    onClick={() => announce(p)}
+                    disabled={busyId === p.id}
+                    title="Email existing customers about this package (SMS follows once the DLT template is approved)"
+                    className="px-2 py-1 text-[10px] font-bold bg-gold/10 text-gold hover:bg-gold hover:text-zinc-950 rounded flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Send className="w-3 h-3" /> Notify Customers
                   </button>
                   <button onClick={() => { if (confirm(`Delete promotion "${p.title}"?`)) withBusy(p.id, () => deletePromo(p.id)); }}
                     className="px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-500/10 rounded flex items-center gap-1">
