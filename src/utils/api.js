@@ -58,11 +58,11 @@ export const loginUser = async (email, password) => {
   return res.json();
 };
 
-export const registerUser = async (name, email, phone, password) => {
+export const registerUser = async (name, email, phone, password, marketingOptIn = false) => {
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, phone, password })
+    body: JSON.stringify({ name, email, phone, password, marketingOptIn })
   });
   if (!res.ok) return throwError(res, "Registration failed");
   return res.json();
@@ -92,11 +92,11 @@ export const requestPhoneOtp = async (phone) => {
  * loginUser (user + accessToken + refreshToken), so callers store it identically.
  * Creates the account on first successful verify.
  */
-export const verifyPhoneOtp = async ({ phone, code, name }) => {
+export const verifyPhoneOtp = async ({ phone, code, name, marketingOptIn }) => {
   const res = await fetch(`${BASE_URL}/auth/otp/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, code, name })
+    body: JSON.stringify({ phone, code, name, marketingOptIn })
   });
   if (!res.ok) return throwError(res, "That code is incorrect or has expired.");
   return res.json();

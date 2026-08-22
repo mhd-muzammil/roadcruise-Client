@@ -9,7 +9,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     name: "",
     email: "",
     phone: "",
-    password: ""
+    password: "",
+    marketingOptIn: false
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +37,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         name: "",
         email: "",
         phone: "",
-        password: ""
+        password: "",
+        // Consent must never carry over between sessions: a box left ticked from
+        // a previous visit would record agreement the customer did not give now.
+        marketingOptIn: false
       });
       setErrors({});
       setShowPassword(false);
@@ -64,6 +68,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [otpCode, setOtpCode] = useState("");
   const [otpName, setOtpName] = useState("");
   const [otpIsNewUser, setOtpIsNewUser] = useState(false);
+  const [otpOptIn, setOtpOptIn] = useState(false);
   // Seconds until another code may be requested. Mirrors the server's per-number
   // cooldown; the server re-checks it, this only keeps the UI honest.
   const [resendIn, setResendIn] = useState(0);
@@ -120,6 +125,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         phone: otpPhone,
         code: otpCode,
         name: otpIsNewUser ? otpName.trim() || undefined : undefined,
+        marketingOptIn: otpIsNewUser ? otpOptIn : undefined,
       });
       onAuthSuccess(payload);
       onClose();
@@ -200,7 +206,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       if (activeTab === "signin") {
         userPayload = await loginUser(formData.email, formData.password);
       } else {
-        userPayload = await registerUser(formData.name, formData.email, formData.phone, formData.password);
+        userPayload = await registerUser(formData.name, formData.email, formData.phone, formData.password, formData.marketingOptIn);
       }
       onAuthSuccess(userPayload);
       onClose();
@@ -371,6 +377,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                       className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:bg-white dark:focus:bg-transparent focus:outline-none rounded-lg py-2.5 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 transition-all"
                     />
                   </div>
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={otpOptIn}
+                      onChange={(e) => setOtpOptIn(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-zinc-300 dark:border-white/20 bg-transparent text-gold focus:ring-gold/40 cursor-pointer"
+                    />
+                    <span className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                      Send me trip offers and package deals by SMS and email. You can turn this off any time.
+                    </span>
+                  </label>
                 </div>
               )}
 
@@ -563,6 +580,25 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   Forgot password?
                 </button>
               </div>
+            )}
+
+            {/* Marketing consent. TRAI service-explicit SMS requires affirmative,
+                recorded consent — so this is an UNTICKED opt-in, never a
+                pre-ticked box, and the wording names both channels because that
+                is what the customer is agreeing to. */}
+            {activeTab === "signup" && (
+              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+                <input
+                  type="checkbox"
+                  name="marketingOptIn"
+                  checked={formData.marketingOptIn}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, marketingOptIn: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-zinc-300 dark:border-white/20 bg-transparent text-gold focus:ring-gold/40 cursor-pointer"
+                />
+                <span className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Send me trip offers and package deals by SMS and email. You can turn this off any time.
+                </span>
+              </label>
             )}
 
             {/* Submit Button */}
