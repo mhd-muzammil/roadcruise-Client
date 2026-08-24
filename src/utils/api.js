@@ -118,6 +118,13 @@ export const verifyPhoneOtp = async ({ phone, code, name, marketingOptIn }) => {
  * Returns { blob, rows } so the caller can warn before someone uploads an empty
  * sheet and wonders why DLT still reads 0 Active.
  */
+/** Consent counts, including how many opted in but have no usable mobile. */
+export const consentSummary = async () => {
+  const res = await fetch(`${BASE_URL}/consent/summary`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not read consent status");
+  return res.json();
+};
+
 export const downloadConsentFile = async () => {
   const res = await fetch(`${BASE_URL}/consent/export.xlsx`, { headers: authHeaders() });
   if (!res.ok) return throwError(res, "Could not build the consent file");

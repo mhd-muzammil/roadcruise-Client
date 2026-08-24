@@ -9,7 +9,7 @@ import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
-  getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile,
+  getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile, consentSummary,
 } from "../utils/api";
 
 const TABS = [
@@ -593,13 +593,18 @@ function PromosTab({ promos, reload }) {
     try {
       const { blob, rows } = await downloadConsentFile();
       if (!rows) {
+        // Distinguish "nobody opted in" from "they opted in but we hold no mobile
+        // number for them". Those need opposite fixes, and a bare zero sends an
+        // admin looking in the wrong place.
+        const s = await consentSummary().catch(() => null);
         alert(
-          "No customers have opted in yet, so the file would be empty.\n\n" +
-            "Customers opt in from My Bookings → Trip offers. Uploading an empty " +
-            "sheet to DLT adds nothing."
+          s && s.optedIn > 0
+            ? `${s.optedIn} customer(s) opted in, but none has a valid 10-digit mobile on their account, so there is nothing to upload.\n\nAdd a mobile number to those accounts, or have them sign in with "Continue with Mobile Number".`
+            : "No customers have opted in yet, so the file would be empty.\n\nCustomers opt in at My Bookings → Trip offers."
         );
         return;
       }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
