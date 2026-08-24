@@ -131,13 +131,22 @@ export const downloadConsentFile = async () => {
   return { blob: await res.blob(), rows: Number(res.headers.get("X-Consent-Rows") || 0) };
 };
 
-export const setMarketingConsent = async (optIn) => {
+export const setMarketingConsent = async (optIn, phone) => {
   const res = await fetch(`${BASE_URL}/auth/marketing-consent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ optIn }),
+    body: JSON.stringify(phone ? { optIn, phone } : { optIn }),
   });
-  if (!res.ok) return throwError(res, "Could not update your preference");
+  if (!res.ok) {
+    // Preserve the server's code: an opt-in with no number on file is a prompt
+    // for input, not an error to display.
+    let body = {};
+    try { body = await res.json(); } catch { /* non-JSON */ }
+    const e = new Error(body.error || "Could not update your preference");
+    e.status = res.status;
+    e.code = body.code;
+    throw e;
+  }
   return res.json();
 };
 

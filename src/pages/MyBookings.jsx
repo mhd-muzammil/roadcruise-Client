@@ -184,34 +184,61 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
  */
 function OfferPreference({ currentUser }) {
   const [optIn, setOptIn] = useState(currentUser?.marketingOptIn === true);
+  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const toggle = async () => {
-    const next = !optIn;
+  // Customers who signed up by email or Google have no mobile on file. Consent
+  // without one is unusable — DLT records consent AGAINST a number — so the card
+  // asks for it in the same moment rather than storing a subscription that can
+  // never be honoured.
+  const hasPhone = /^[6-9]\d{9}$/.test(String(currentUser?.phone || "").replace(/\D/g, "").slice(-10));
+  const [needsPhone, setNeedsPhone] = useState(false);
+
+  const persist = (payload) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("rc_user") || "null");
+      if (stored) {
+        Object.assign(stored, payload);
+        localStorage.setItem("rc_user", JSON.stringify(stored));
+      }
+    } catch { /* storage unavailable — the server remains the source of truth */ }
+  };
+
+  const submit = async (next, withPhone) => {
     setSaving(true);
     setError("");
     setSaved(false);
     try {
-      const r = await setMarketingConsent(next);
+      const r = await setMarketingConsent(next, withPhone);
       setOptIn(r.marketingOptIn === true);
-      // Keep the persisted user in step, so a reload does not show the old value.
-      try {
-        const stored = JSON.parse(localStorage.getItem("rc_user") || "null");
-        if (stored) {
-          stored.marketingOptIn = r.marketingOptIn === true;
-          localStorage.setItem("rc_user", JSON.stringify(stored));
-        }
-      } catch { /* storage unavailable — the server is still the source of truth */ }
+      setNeedsPhone(false);
+      setPhone("");
+      persist({ marketingOptIn: r.marketingOptIn === true, ...(r.phone ? { phone: r.phone } : {}) });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setError(e.message);
+      // The server refuses an opt-in it cannot attach to a number; that is a
+      // prompt for input, not a failure to report.
+      if (e.code === "PHONE_REQUIRED") setNeedsPhone(true);
+      else setError(e.message);
       setOptIn(currentUser?.marketingOptIn === true);
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggle = () => {
+    const next = !optIn;
+    if (next && !hasPhone) { setNeedsPhone(true); return; }
+    submit(next);
+  };
+
+  const savePhone = (e) => {
+    e.preventDefault();
+    if (!/^[6-9]\d{9}$/.test(phone)) { setError("Enter a valid 10-digit mobile number"); return; }
+    submit(true, phone);
   };
 
   return (
@@ -250,9 +277,44 @@ function OfferPreference({ currentUser }) {
           />
         </button>
       </div>
+
+      {needsPhone && !optIn && (
+        <form onSubmit={savePhone} className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/5">
+          <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+            Mobile number for offers
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-semibold text-zinc-400">
+                +91
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoFocus
+                value={phone}
+                onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                placeholder="98765 43210"
+                className="w-full bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 focus:border-gold/60 focus:outline-none rounded-lg py-2 pl-12 pr-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 bg-gold hover:opacity-90 text-zinc-950 font-bold rounded-lg text-xs disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Subscribe"}
+            </button>
+          </div>
+          <p className="text-[10px] text-zinc-400 mt-1.5">
+            We use this only for the offers you just agreed to, and for your booking updates.
+          </p>
+        </form>
+      )}
     </div>
   );
 }
+
 
 export default function MyBookings({ currentUser, onAuthClick, onSessionExpired }) {
   useDocumentMeta({ title: "My Bookings | Road Cruise", noindex: true });
