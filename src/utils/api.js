@@ -110,6 +110,20 @@ export const verifyPhoneOtp = async ({ phone, code, name, marketingOptIn }) => {
  * the stored state so the UI reflects what was actually recorded rather than
  * what was clicked.
  */
+/**
+ * The consent list as Airtel's Upload Consent workbook (admin).
+ *
+ * Fetched rather than linked: the route is Bearer-authenticated, and a plain
+ * <a href> navigation cannot send the header — the browser would just get a 401.
+ * Returns { blob, rows } so the caller can warn before someone uploads an empty
+ * sheet and wonders why DLT still reads 0 Active.
+ */
+export const downloadConsentFile = async () => {
+  const res = await fetch(`${BASE_URL}/consent/export.xlsx`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not build the consent file");
+  return { blob: await res.blob(), rows: Number(res.headers.get("X-Consent-Rows") || 0) };
+};
+
 export const setMarketingConsent = async (optIn) => {
   const res = await fetch(`${BASE_URL}/auth/marketing-consent`, {
     method: "POST",

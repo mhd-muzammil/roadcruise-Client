@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
-  Megaphone, Send, Eye, EyeOff, Clock,
+  Megaphone, Download, Send, Eye, EyeOff, Clock,
 } from "lucide-react";
 import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
-  getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo,
+  getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile,
 } from "../utils/api";
 
 const TABS = [
@@ -583,6 +583,39 @@ function PromosTab({ promos, reload }) {
    * no-op server-side (deduped per customer per promo), so the guard is really
    * about the FIRST accidental click.
    */
+  /**
+   * Download the DLT consent workbook. Warns on an empty list rather than
+   * handing over a header-only file: uploading one to Airtel adds nothing and
+   * looks identical to a failed upload afterwards.
+   */
+  const downloadConsent = async () => {
+    setBusyId("consent");
+    try {
+      const { blob, rows } = await downloadConsentFile();
+      if (!rows) {
+        alert(
+          "No customers have opted in yet, so the file would be empty.\n\n" +
+            "Customers opt in from My Bookings → Trip offers. Uploading an empty " +
+            "sheet to DLT adds nothing."
+        );
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "roadcruise-consent.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      alert(`Downloaded ${rows} consent record${rows === 1 ? "" : "s"}.\n\nUpload it at DLT → Manage Consent → Upload Consent.`);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const announce = async (p) => {
     if (!confirm(`Send "${p.title}" to all customers?\n\nEmails go out immediately. This cannot be unsent.`)) return;
     setBusyId(p.id);
@@ -603,11 +636,22 @@ function PromosTab({ promos, reload }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
         <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Package Promotions ({promos.length})</h3>
         <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
           The newest <span className="text-gold font-bold">Live</span> promotion appears as a popup when visitors open the website — once per session.
         </p>
+        </div>
+        <button
+          type="button"
+          onClick={downloadConsent}
+          disabled={busyId === "consent"}
+          title="Export customers who opted in, in Airtel DLT's Upload Consent format"
+          className="px-3 py-1.5 text-[11px] font-bold border border-zinc-200 dark:border-white/10 hover:border-gold/60 text-zinc-600 dark:text-zinc-300 rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <Download className="w-3.5 h-3.5" /> Consent file for DLT
+        </button>
       </div>
 
       <form onSubmit={submit} className="glass-premium p-6 rounded-2xl border border-gold/30 bg-gold/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
