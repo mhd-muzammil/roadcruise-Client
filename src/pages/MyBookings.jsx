@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
   CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
-  Pencil, Download, X,
+  Pencil, Download, X, BellRing,
 } from "lucide-react";
-import { fetchBookings, cancelBooking, modifyBooking, downloadBookingInvoice } from "../utils/api";
+import { fetchBookings, cancelBooking, modifyBooking, downloadBookingInvoice, setMarketingConsent } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
 
@@ -173,6 +173,87 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
   );
 }
 
+/**
+ * Marketing preference. Lives here rather than buried in a settings page because
+ * this is the only account screen customers actually visit, and consent that
+ * nobody can find is consent nobody gives.
+ *
+ * Reflects what the SERVER stored, not what was clicked: the response is echoed
+ * back into state and into the persisted user, so a failed request leaves the
+ * switch showing the truth.
+ */
+function OfferPreference({ currentUser }) {
+  const [optIn, setOptIn] = useState(currentUser?.marketingOptIn === true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const toggle = async () => {
+    const next = !optIn;
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    try {
+      const r = await setMarketingConsent(next);
+      setOptIn(r.marketingOptIn === true);
+      // Keep the persisted user in step, so a reload does not show the old value.
+      try {
+        const stored = JSON.parse(localStorage.getItem("rc_user") || "null");
+        if (stored) {
+          stored.marketingOptIn = r.marketingOptIn === true;
+          localStorage.setItem("rc_user", JSON.stringify(stored));
+        }
+      } catch { /* storage unavailable — the server is still the source of truth */ }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e.message);
+      setOptIn(currentUser?.marketingOptIn === true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-white/5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+            <BellRing className="w-4 h-4 text-gold" /> Trip offers
+          </h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed">
+            Get our seasonal packages and special fares by SMS and email. We only send a
+            few a year, and you can switch this off whenever you like.
+          </p>
+          {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
+          {saved && !error && (
+            <p className="text-xs text-emerald-500 mt-2 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> {optIn ? "You're subscribed" : "Preference saved"}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={optIn}
+          aria-label="Receive trip offers"
+          disabled={saving}
+          onClick={toggle}
+          className={`relative w-12 h-6 flex-shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+            optIn ? "bg-gold" : "bg-zinc-300 dark:bg-white/10"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+              optIn ? "translate-x-6" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MyBookings({ currentUser, onAuthClick, onSessionExpired }) {
   useDocumentMeta({ title: "My Bookings | Road Cruise", noindex: true });
   const [bookings, setBookings] = useState([]);
@@ -322,6 +403,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-4">
+        <OfferPreference currentUser={currentUser} />
         {notice && (
           <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 flex-shrink-0" /><p className="text-sm font-medium">{notice}</p>

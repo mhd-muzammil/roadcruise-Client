@@ -102,6 +102,24 @@ export const verifyPhoneOtp = async ({ phone, code, name, marketingOptIn }) => {
   return res.json();
 };
 
+/**
+ * Record or withdraw marketing consent for the signed-in customer.
+ *
+ * Its own endpoint rather than a profile field: the server stamps the time,
+ * source and IP alongside the flag, which is what a DLT audit asks for. Returns
+ * the stored state so the UI reflects what was actually recorded rather than
+ * what was clicked.
+ */
+export const setMarketingConsent = async (optIn) => {
+  const res = await fetch(`${BASE_URL}/auth/marketing-consent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ optIn }),
+  });
+  if (!res.ok) return throwError(res, "Could not update your preference");
+  return res.json();
+};
+
 // --- Password recovery (public, rate-limited server-side) ---
 
 /**
