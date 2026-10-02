@@ -1,14 +1,27 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "status": 503,
-      "dest": "/503.html",
-      "headers": {
-        "Retry-After": "3600",
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-        "X-Robots-Tag": "noindex, nofollow"
-      }
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
     }
   ]
 }
