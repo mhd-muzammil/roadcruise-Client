@@ -18,10 +18,10 @@ const TripPlannerModal = lazy(() => import("./components/booking/TripPlannerModa
 // Page Imports — primary landing routes stay eager; the rest are
 // code-split so their JS never blocks first paint of the home page.
 import Home from "./pages/Home";
-import About from "./pages/About";
-import ToursTravels from "./pages/ToursTravels";
-import Contact from "./pages/Contact";
-import Fleet from "./pages/Fleet";
+const About = lazy(() => import("./pages/About"));
+const ToursTravels = lazy(() => import("./pages/ToursTravels"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Fleet = lazy(() => import("./pages/Fleet"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Gallery = lazy(() => import("./pages/Gallery"));

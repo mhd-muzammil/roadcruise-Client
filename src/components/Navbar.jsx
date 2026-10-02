@@ -53,10 +53,10 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
             wordmark black, so both need it to stay legible in either theme). */}
         <Link to="/" className="group shrink-0" aria-label="Road Cruise — home">
           <img
-            src="/logo.png"
+            src="/logo-nav.webp"
             alt="Road Cruise — feel like cruise"
-            width="760"
-            height="330"
+            width="380"
+            height="165"
             className="h-10 md:h-11 w-auto object-contain rounded-lg shadow-sm transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
