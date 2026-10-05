@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
-  Megaphone, Download, Send, Eye, EyeOff, Clock,
+  Megaphone, Download, Send, Eye, EyeOff, Clock, Package as PackageIcon, Pencil,
 } from "lucide-react";
 import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
   getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile, consentSummary,
+  getAdminPackages, createPackage, updatePackage, deletePackage, downloadBookingsExport,
 } from "../utils/api";
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { id: "bookings", label: "Bookings", icon: ClipboardList },
   { id: "fleet", label: "Vehicles", icon: Car },
   { id: "gallery", label: "Gallery", icon: ImageIcon },
+  { id: "packages", label: "Packages", icon: PackageIcon },
   { id: "promos", label: "Promotions", icon: Megaphone },
 ];
 
@@ -53,6 +55,7 @@ export default function AdminPanel({ currentUser }) {
   const [vehicles, setVehicles] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [promos, setPromos] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [error, setError] = useState("");
 
   const isAdmin = currentUser && currentUser.role === "admin";
@@ -69,6 +72,9 @@ export default function AdminPanel({ currentUser }) {
   const loadPromos = useCallback(async () => {
     try { setPromos(await getAdminPromos()); } catch (e) { console.error(e); }
   }, []);
+  const loadPackages = useCallback(async () => {
+    try { setPackages(await getAdminPackages()); } catch (e) { console.error(e); }
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -76,7 +82,8 @@ export default function AdminPanel({ currentUser }) {
     loadVehicles();
     loadGallery();
     loadPromos();
-  }, [isAdmin, loadBookings, loadVehicles, loadGallery, loadPromos]);
+    loadPackages();
+  }, [isAdmin, loadBookings, loadVehicles, loadGallery, loadPromos, loadPackages]);
 
   // --- Authorization gate: admin role only. No bypass, no test credentials. ---
   if (!isAdmin) {
@@ -164,6 +171,9 @@ export default function AdminPanel({ currentUser }) {
         {activeTab === "gallery" && (
           <GalleryTab gallery={gallery} reload={loadGallery} />
         )}
+        {activeTab === "packages" && (
+          <PackagesTab packages={packages} reload={loadPackages} />
+        )}
         {activeTab === "promos" && (
           <PromosTab promos={promos} reload={loadPromos} />
         )}
@@ -235,6 +245,26 @@ function statusCls(s) {
 
 function BookingsTab({ bookings, reload, reloadVehicles }) {
   const [busy, setBusy] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const exportXlsx = async () => {
+    setExporting(true);
+    try {
+      const { blob } = await downloadBookingsExport();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `roadcruise-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const act = async (fn, id) => {
     setBusy(id);
@@ -245,7 +275,17 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Booking Logs ({bookings.length})</h3>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Booking Logs ({bookings.length})</h3>
+        <button
+          type="button"
+          onClick={exportXlsx}
+          disabled={exporting || bookings.length === 0}
+          className="px-3 py-1.5 text-[11px] font-bold bg-gold hover:bg-gold-hover text-zinc-950 rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Export to Excel
+        </button>
+      </div>
       <div className="w-full overflow-x-auto rounded-2xl border border-zinc-200 dark:border-white/5 shadow-xl glass-premium bg-white/40 dark:bg-zinc-900/10">
         <table className="w-full text-left border-collapse min-w-[820px]">
           <thead>
@@ -543,6 +583,208 @@ function GalleryTab({ gallery, reload }) {
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
               {m.caption && <p className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] p-1.5 truncate">{m.caption}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+//  Packages (Tours & Travels page) — add / edit / hide / delete, plus the
+//  payment rule: online only, offline only, or partial (advance %) online.
+// ============================================================================
+const EMPTY_PACKAGE = {
+  name: "", tagline: "", duration: "", price: "", rating: "4.8", reviewsCount: "0",
+  inclusions: "", exclusions: "", paymentMode: "online", advancePercent: "20",
+};
+
+const PAY_MODES = [
+  { id: "online", label: "Online only", hint: "Full amount paid online" },
+  { id: "offline", label: "Offline only", hint: "Reserve now, pay in person" },
+  { id: "partial", label: "Partial online", hint: "Advance % online, balance later" },
+];
+
+const payModeLabel = (p) =>
+  p.paymentMode === "partial" ? `Partial — ${p.advancePercent}% online`
+  : p.paymentMode === "offline" ? "Offline only" : "Online only";
+
+function PackagesTab({ packages, reload }) {
+  const [form, setForm] = useState(EMPTY_PACKAGE);
+  const [editingId, setEditingId] = useState(null);
+  const [image, setImage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [err, setErr] = useState("");
+  const imageRef = useRef(null);
+  const formRef = useRef(null);
+
+  const reset = () => {
+    setForm(EMPTY_PACKAGE); setEditingId(null); setImage(null); setErr("");
+    if (imageRef.current) imageRef.current.value = "";
+  };
+
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setImage(null);
+    setErr("");
+    setForm({
+      name: p.name, tagline: p.tagline, duration: p.duration, price: p.price,
+      rating: p.rating, reviewsCount: String(p.reviewsCount ?? 0),
+      inclusions: p.inclusions.join("\n"), exclusions: p.exclusions.join("\n"),
+      paymentMode: p.paymentMode, advancePercent: String(p.advancePercent),
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true); setErr("");
+    try {
+      if (editingId) await updatePackage(editingId, form, image);
+      else await createPackage(form, image);
+      reset();
+      await reload();
+    } catch (ex) { setErr(ex.message); }
+    finally { setSaving(false); }
+  };
+
+  const withBusy = async (id, fn) => {
+    setBusyId(id);
+    try { await fn(); await reload(); } catch (ex) { alert(ex.message); } finally { setBusyId(null); }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Tour Packages ({packages.length})</h3>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+          Live packages appear on the <span className="text-gold font-bold">Tours &amp; Travels</span> page. Choose how customers pay for each one.
+        </p>
+      </div>
+
+      <form ref={formRef} onSubmit={submit} className="glass-premium p-6 rounded-2xl border border-gold/30 bg-gold/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="sm:col-span-2 lg:col-span-3 text-xs font-bold text-gold uppercase tracking-wider">
+          {editingId ? "Edit package" : "Add a new package"}
+        </div>
+        <Labeled label="Package Name *">
+          <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="e.g. Munnar Tea Hills Escape" />
+        </Labeled>
+        <Labeled label="Tagline">
+          <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={inputCls} placeholder="e.g. Misty tea estates & waterfalls" />
+        </Labeled>
+        <Labeled label="Duration">
+          <input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className={inputCls} placeholder="e.g. 3 Days · 2 Nights" />
+        </Labeled>
+        <Labeled label="Price ₹ per person">
+          <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputCls} placeholder="e.g. 6,999" />
+        </Labeled>
+        <Labeled label="Rating (e.g. 4.8)">
+          <input value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className={inputCls} />
+        </Labeled>
+        <Labeled label="Reviews count">
+          <input type="number" min="0" value={form.reviewsCount} onChange={(e) => setForm({ ...form, reviewsCount: e.target.value })} className={inputCls} />
+        </Labeled>
+        <Labeled label="Included (one per line)">
+          <textarea rows={4} value={form.inclusions} onChange={(e) => setForm({ ...form, inclusions: e.target.value })}
+            className={inputCls} placeholder={"4★ stay\nPrivate transport\nBreakfast"} />
+        </Labeled>
+        <Labeled label="Excluded (one per line)">
+          <textarea rows={4} value={form.exclusions} onChange={(e) => setForm({ ...form, exclusions: e.target.value })}
+            className={inputCls} placeholder={"Lunch & dinner\nEntry tickets\nToll & parking"} />
+        </Labeled>
+        <Labeled label={editingId ? "Cover Photo (leave empty to keep)" : "Cover Photo"}>
+          <input ref={imageRef} type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)}
+            className="text-[11px] text-zinc-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-gold/20 file:text-gold" />
+        </Labeled>
+
+        <div className="sm:col-span-2 lg:col-span-3">
+          <label className="block text-[9px] font-bold text-zinc-500 uppercase tracking-wide mb-1.5">Payment option for this package</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {PAY_MODES.map((m) => (
+              <button
+                key={m.id} type="button" onClick={() => setForm({ ...form, paymentMode: m.id })}
+                className={`text-left p-3 rounded-xl border transition-all ${
+                  form.paymentMode === m.id
+                    ? "border-gold bg-gold/10"
+                    : "border-zinc-200 dark:border-white/10 hover:border-gold/40"
+                }`}
+              >
+                <p className="text-xs font-bold text-zinc-900 dark:text-white">{m.label}</p>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{m.hint}</p>
+              </button>
+            ))}
+          </div>
+          {form.paymentMode === "partial" && (
+            <div className="mt-3 max-w-xs">
+              <Labeled label="Advance to pay online (%)">
+                <input type="number" min="1" max="99" value={form.advancePercent}
+                  onChange={(e) => setForm({ ...form, advancePercent: e.target.value })} className={inputCls} />
+              </Labeled>
+            </div>
+          )}
+        </div>
+
+        {err && <p className="sm:col-span-2 lg:col-span-3 text-red-500 text-xs">{err}</p>}
+        <div className="sm:col-span-2 lg:col-span-3 flex gap-3">
+          <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-gold hover:bg-gold-hover disabled:opacity-60 text-zinc-950 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : editingId ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {editingId ? "Save Changes" : "Add Package"}
+          </button>
+          {editingId && (
+            <button type="button" onClick={reset} className="px-5 py-2.5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-300 font-bold rounded-lg text-xs uppercase tracking-wider">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      {packages.length === 0 ? (
+        <div className="text-center py-16 text-zinc-400 text-sm">No packages yet. Add one and it will appear on the Tours &amp; Travels page.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {packages.map((p) => (
+            <div key={p.id} className="glass-premium rounded-2xl border border-zinc-200 dark:border-white/5 bg-white/40 dark:bg-zinc-900/10 overflow-hidden flex gap-4 p-4">
+              <div className="w-28 h-28 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
+                {p.imageUrl ? (
+                  <img src={mediaUrl(p.imageUrl)} alt={p.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-300"><PackageIcon className="w-8 h-8" /></div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white truncate">{p.name}</h4>
+                    {p.tagline && <p className="text-[10px] text-zinc-400 truncate">{p.tagline}</p>}
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0 ${p.active ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-400"}`}>
+                    {p.active ? "Live" : "Hidden"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-zinc-500 flex-wrap">
+                  {p.duration && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {p.duration}</span>}
+                  {p.price && <span className="font-bold text-gold">₹{p.price}</span>}
+                </div>
+                <p className="mt-1.5 text-[10px] font-semibold text-zinc-600 dark:text-zinc-300">Payment: {payModeLabel(p)}</p>
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <button onClick={() => startEdit(p)}
+                    className="px-2 py-1 text-[10px] font-bold bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 rounded flex items-center gap-1">
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  <button onClick={() => withBusy(p.id, () => updatePackage(p.id, { active: !p.active }))}
+                    className="px-2 py-1 text-[10px] font-bold bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 rounded flex items-center gap-1">
+                    {p.active ? <><EyeOff className="w-3 h-3" /> Hide</> : <><Eye className="w-3 h-3" /> Go Live</>}
+                  </button>
+                  <button onClick={() => { if (confirm(`Delete package "${p.name}"?`)) withBusy(p.id, () => deletePackage(p.id)); }}
+                    className="px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-500/10 rounded flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                  {busyId === p.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" />}
+                </div>
+              </div>
             </div>
           ))}
         </div>

@@ -1,7 +1,15 @@
-import React from "react";
-import { Star, CheckCircle, Clock, MapPin, Calendar, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Star, CheckCircle, Clock, MapPin, Calendar, ArrowRight, X, CreditCard } from "lucide-react";
+import { getPackages, mediaUrl } from "../utils/api";
 
-const PACKAGES_DATA = [
+// Short label for the payment rule an admin set on a package.
+const paymentLabel = (pkg) =>
+  pkg.paymentMode === "offline" ? "Pay on arrival"
+  : pkg.paymentMode === "partial" ? `Pay ${pkg.advancePercent}% online, rest later`
+  : pkg.paymentMode === "online" ? "Pay online"
+  : "";
+
+const FALLBACK_PACKAGES = [
   {
     id: "kodai-premium",
     name: "Kodaikanal Premium Package",
@@ -102,6 +110,17 @@ const GROUP_TOURS = [
 ];
 
 export default function Packages({ onBookNowClick }) {
+  // Admin-managed packages. The built-in list is only a fallback while loading
+  // or if the API is unreachable, so the page is never blank.
+  const [packages, setPackages] = useState(FALLBACK_PACKAGES);
+  useEffect(() => {
+    let cancelled = false;
+    getPackages()
+      .then((list) => { if (!cancelled && Array.isArray(list)) setPackages(list); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <section id="packages" className="py-24 bg-zinc-50 dark:bg-bg-dark relative overflow-hidden transition-colors duration-300">
       
@@ -129,7 +148,12 @@ export default function Packages({ onBookNowClick }) {
 
         {/* 1. Holiday Packages Grid (4 columns) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {PACKAGES_DATA.map((pkg) => (
+          {packages.length === 0 && (
+            <p className="col-span-full text-center text-sm text-zinc-500 dark:text-zinc-400">
+              New packages are coming soon. Contact us for a custom itinerary.
+            </p>
+          )}
+          {packages.map((pkg) => (
             <div 
               key={pkg.id} 
               className="group flex flex-col justify-between rounded-3xl glass-premium border border-zinc-200 dark:border-white/5 hover:border-gold/40 hover:scale-[1.02] hover:-translate-y-1.5 shadow-2xl hover:shadow-gold/5 transition-all duration-500 bg-white/40 dark:bg-zinc-900/10 overflow-hidden"
@@ -138,7 +162,7 @@ export default function Packages({ onBookNowClick }) {
               {/* Image Section */}
               <div className="h-48 relative overflow-hidden bg-zinc-950">
                 <img 
-                  src={pkg.image} 
+                  src={mediaUrl(pkg.imageUrl || pkg.image)}
                   alt={pkg.name} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95 group-hover:brightness-100"
                   loading="lazy"
@@ -171,14 +195,33 @@ export default function Packages({ onBookNowClick }) {
                   </div>
 
                   {/* Bullet Inclusions with Gold Check */}
-                  <div className="space-y-2 pt-2 border-t border-zinc-150 dark:border-white/5">
+                  <div className="space-y-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-3">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Included</p>
                     {pkg.inclusions.map((inc, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-[11px] text-zinc-600 dark:text-zinc-400">
-                        <CheckCircle className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
+                      <div key={i} className="flex items-start gap-2.5 text-xs font-medium text-zinc-800 dark:text-zinc-100">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                         <span>{inc}</span>
                       </div>
                     ))}
                   </div>
+
+                  {pkg.exclusions?.length > 0 && (
+                    <div className="space-y-2 rounded-xl border border-red-500/30 bg-red-500/5 dark:bg-red-500/10 p-3">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400">Excluded</p>
+                      {pkg.exclusions.map((exc, i) => (
+                        <div key={i} className="flex items-start gap-2.5 text-xs font-medium text-zinc-800 dark:text-zinc-100">
+                          <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                          <span>{exc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {paymentLabel(pkg) && (
+                    <p className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+                      <CreditCard className="w-3.5 h-3.5 text-gold" /> {paymentLabel(pkg)}
+                    </p>
+                  )}
                 </div>
 
                 {/* Pricing & Booking CTA */}

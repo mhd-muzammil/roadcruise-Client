@@ -581,3 +581,53 @@ export const deletePromo = async (id) => {
   if (!res.ok) return throwError(res, "Failed to delete promotion");
   return res.json();
 };
+
+// --- Tour packages (Tours & Travels page; admin-managed) ---
+
+/** Active packages for the public Tours & Travels page. */
+export const getPackages = async () => {
+  const res = await fetch(`${BASE_URL}/packages`);
+  if (!res.ok) return throwError(res, "Failed to load packages");
+  return res.json();
+};
+
+/** Every package, active or hidden (admin). */
+export const getAdminPackages = async () => {
+  const res = await fetch(`${BASE_URL}/packages/all`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to load packages");
+  return res.json();
+};
+
+const packageForm = (fields, imageFile) => {
+  const fd = new FormData();
+  Object.entries(fields).forEach(([k, v]) => v !== undefined && v !== null && fd.append(k, v));
+  if (imageFile) fd.append("image", imageFile);
+  return fd;
+};
+
+/** Create a package (admin). `fields.inclusions/exclusions` are newline-separated strings. */
+export const createPackage = async (fields, imageFile) => {
+  const res = await fetch(`${BASE_URL}/packages`, { method: "POST", headers: authHeaders(), body: packageForm(fields, imageFile) });
+  if (!res.ok) return throwError(res, "Failed to create package");
+  return res.json();
+};
+
+/** Edit a package (admin) — any subset of fields, optional new image. */
+export const updatePackage = async (id, fields, imageFile) => {
+  const res = await fetch(`${BASE_URL}/packages/${id}`, { method: "PATCH", headers: authHeaders(), body: packageForm(fields, imageFile) });
+  if (!res.ok) return throwError(res, "Failed to update package");
+  return res.json();
+};
+
+export const deletePackage = async (id) => {
+  const res = await fetch(`${BASE_URL}/packages/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Failed to delete package");
+  return res.json();
+};
+
+/** Download all bookings as .xlsx (admin). */
+export const downloadBookingsExport = async () => {
+  const res = await fetch(`${BASE_URL}/bookings/export.xlsx`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not export bookings");
+  return { blob: await res.blob(), rows: Number(res.headers.get("X-Export-Rows") || 0) };
+};

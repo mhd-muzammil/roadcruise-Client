@@ -109,6 +109,13 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   const vehicleMeta = selectedItem?.vehicle || null;
   const packageMeta = selectedItem?.pkg || null;
 
+  // Admin-set payment rule for this package (null for vehicle/general bookings
+  // and the offline fallback list): "online" | "offline" | "partial".
+  const pkgPayMode = mode === "package" ? packageMeta?.paymentMode || null : null;
+  const advancePct = Number(packageMeta?.advancePercent) || 20;
+  const allowOnline = pkgPayMode !== "offline";
+  const allowArrival = pkgPayMode === null || pkgPayMode === "offline";
+
   const [formData, setFormData] = useState({
     name: "", phone: "", pickup: "", drop: "",
     fromDate: "", toDate: "", tripType: "Round-trip",
@@ -250,6 +257,11 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     fare,
     paymentMode,
     paymentMethod: paymentMode === "arrival" ? "Pay on arrival" : "Online",
+    // The server re-applies the package's payment rule; these just keep the
+    // request consistent with it.
+    ...(pkgPayMode
+      ? { packageId: packageMeta.id, paymentPlan: pkgPayMode === "partial" ? "advance" : "full" }
+      : {}),
   });
 
   // Reserve now, pay cash/UPI on arrival — booking is created as Pending for the
@@ -692,8 +704,18 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 <p className="text-red-500 text-xs bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">{apiError}</p>
               )}
 
+              {pkgPayMode && (
+                <p className="text-[11px] font-semibold text-gold bg-gold/10 border border-gold/20 rounded-lg p-2.5">
+                  {pkgPayMode === "offline" && "This package is paid offline — reserve now and pay our team in person."}
+                  {pkgPayMode === "online" && "This package requires full payment online to confirm your booking."}
+                  {pkgPayMode === "partial" &&
+                    `Pay ${advancePct}% (₹${Math.max(1, Math.round(fare * advancePct / 100)).toLocaleString("en-IN")}) online now to confirm; the balance is paid later.`}
+                </p>
+              )}
+
               <div className="space-y-3">
                 {/* Pay Online */}
+                {allowOnline && (
                 <button
                   onClick={handlePayOnline}
                   className="w-full flex items-center gap-3 p-4 rounded-xl border border-gold/40 bg-gold/5 hover:bg-gold/10 text-left transition-all"
@@ -702,13 +724,17 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                     <CreditCard className="w-5 h-5 text-gold" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-zinc-900 dark:text-white">Pay Securely Online</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                      {pkgPayMode === "partial" ? `Pay ${advancePct}% Advance Online` : "Pay Securely Online"}
+                    </p>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Card / UPI / Net Banking via encrypted gateway. Confirms instantly.</p>
                   </div>
                   <ShieldCheck className="w-4 h-4 text-gold" />
                 </button>
+                )}
 
                 {/* Pay on Arrival */}
+                {allowArrival && (
                 <button
                   onClick={handlePayOnArrival}
                   className="w-full flex items-center gap-3 p-4 rounded-xl border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-left transition-all"
@@ -721,6 +747,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">We hold your booking; our team confirms it and you pay in person.</p>
                   </div>
                 </button>
+                )}
               </div>
 
               <button

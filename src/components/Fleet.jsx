@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Shield, Info, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Users, Shield, Info, Loader2, AlertCircle, CheckCircle, X } from "lucide-react";
 import innovaCrystaImg from "../assets/innova-crysta.webp";
 import { getVehicles, mediaUrl } from "../utils/api";
 
@@ -213,16 +213,23 @@ export default function Fleet({ onBookNowClick }) {
         )}
 
         {/* Exclusions */}
-        <div className="mt-16 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs text-zinc-600 dark:text-zinc-400 max-w-4xl mx-auto space-y-3">
-          <h4 className="font-bold text-gold uppercase tracking-wider text-center sm:text-left flex items-center gap-2">
-            <Info className="w-4 h-4 text-gold flex-shrink-0" />
+        <div className="mt-16 p-6 rounded-2xl bg-red-500/5 dark:bg-red-500/10 border border-red-500/30 text-sm text-zinc-800 dark:text-zinc-100 max-w-4xl mx-auto space-y-3">
+          <h4 className="font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider text-center sm:text-left flex items-center gap-2">
+            <Info className="w-4 h-4 flex-shrink-0" />
             <span>Tariff Exclusions & Guidelines</span>
           </h4>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 list-disc list-inside">
-            <li>Excludes Toll Gate fees & Parking charges.</li>
-            <li>Excludes State Entry Tax & Permits.</li>
-            <li>Excludes Hill Station entry charges.</li>
-            <li>Night allowance of ₹200 to ₹500 applies for driving between 10:00 PM and 5:00 AM (varies per vehicle).</li>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 font-medium">
+            {[
+              "Excludes Toll Gate fees & Parking charges.",
+              "Excludes State Entry Tax & Permits.",
+              "Excludes Hill Station entry charges.",
+              "Night allowance of ₹200 to ₹500 applies for driving between 10:00 PM and 5:00 AM (varies per vehicle).",
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2">
+                <X className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-500" />
+                <span>{t}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

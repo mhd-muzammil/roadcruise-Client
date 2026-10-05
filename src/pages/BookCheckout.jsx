@@ -370,13 +370,19 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
                 </button>
               ))}
             </div>
-            <ul className="p-6 space-y-3">
+            <ul
+              className={`m-4 p-5 space-y-3 rounded-xl border ${
+                tab === "inclusions"
+                  ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10"
+                  : "border-red-500/30 bg-red-500/5 dark:bg-red-500/10"
+              }`}
+            >
               {(tab === "inclusions" ? quote.included : quote.excluded).map((line) => (
-                <li key={line} className="flex items-start gap-3 text-sm text-zinc-700 dark:text-zinc-300">
+                <li key={line} className="flex items-start gap-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
                   {tab === "inclusions" ? (
-                    <Check className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   ) : (
-                    <X className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                    <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   )}
                   {line}
                 </li>

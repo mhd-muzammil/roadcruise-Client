@@ -308,24 +308,30 @@ function CabCard({ card, onSelect }) {
               )}
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3 mt-3">
-              <div>
-                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1.5">
-                  <Check className="w-3.5 h-3.5" /> Included
+            <div className="grid sm:grid-cols-2 gap-3 mt-3">
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-3.5">
+                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
+                  <Check className="w-4 h-4" /> Included
                 </p>
-                <ul className="space-y-1">
+                <ul className="space-y-1.5">
                   {quote.included.map((line) => (
-                    <li key={line} className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{line}</li>
+                    <li key={line} className="flex items-start gap-2 text-[13px] font-medium text-zinc-800 dark:text-zinc-100 leading-snug">
+                      <Check className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" />
+                      <span>{line}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-                  <X className="w-3.5 h-3.5" /> Excluded
+              <div className="rounded-xl border border-red-500/30 bg-red-500/5 dark:bg-red-500/10 p-3.5">
+                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400 mb-2">
+                  <X className="w-4 h-4" /> Excluded
                 </p>
-                <ul className="space-y-1">
+                <ul className="space-y-1.5">
                   {quote.excluded.map((line) => (
-                    <li key={line} className="text-xs text-zinc-500 dark:text-zinc-500 leading-relaxed">{line}</li>
+                    <li key={line} className="flex items-start gap-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-200 leading-snug">
+                      <X className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-500" />
+                      <span>{line}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
