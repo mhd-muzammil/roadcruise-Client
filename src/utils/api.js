@@ -395,14 +395,20 @@ export const searchPlaces = async (q) => {
 };
 
 /**
- * Driving route between two points. Returns { distanceKm, durationMin,
- * estimated } — `estimated: true` means the road router was unreachable and
- * the server answered with a road-factor straight-line approximation.
+ * Server-priced quotes for a trip-planner search (public). Returns
+ * { route, days, gstRate, advanceRate, quotes: [{ vehicleId, pricing, included,
+ * excluded, rental }] }. `route.estimated: true` means the road router was
+ * unreachable and the distance is a road-factor straight-line approximation.
+ * The booking is re-priced server-side with the same code, so these amounts
+ * are exactly what gets charged.
  */
-export const getDrivingRoute = async ({ fromLat, fromLon, toLat, toLon }) => {
-  const qs = new URLSearchParams({ fromLat, fromLon, toLat, toLon });
-  const res = await fetch(`${BASE_URL}/places/route?${qs}`);
-  if (!res.ok) return throwError(res, "Could not calculate the route");
+export const quoteTrip = async (trip) => {
+  const res = await fetch(`${BASE_URL}/bookings/quote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trip }),
+  });
+  if (!res.ok) return throwError(res, "Could not load fares");
   return res.json();
 };
 
@@ -527,6 +533,13 @@ export const deleteGalleryItem = async (id) => {
 export const getActivePromo = async () => {
   const res = await fetch(`${BASE_URL}/promos/active`);
   if (!res.ok) return throwError(res, "Failed to load promotions");
+  return res.json();
+};
+
+/** Public offers list — every ACTIVE promo, newest first (homepage "What's New"). */
+export const getOffers = async () => {
+  const res = await fetch(`${BASE_URL}/promos/offers`);
+  if (!res.ok) return throwError(res, "Failed to load offers");
   return res.json();
 };
 

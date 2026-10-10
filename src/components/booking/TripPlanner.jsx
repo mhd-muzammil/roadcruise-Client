@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRightLeft, ChevronDown, Search } from "lucide-react";
+import {
+  ArrowRightLeft, ChevronDown, Search, Plane, ArrowRight, Repeat, Clock, Plus, X, ChevronUp,
+} from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
-import { TRIP_TYPES, HOURLY_PACKAGES, encodeSearch } from "../../utils/fare";
+import { TRIP_TYPES, HOURLY_PACKAGES, STOP_TRIP_TYPES, MAX_STOPS, encodeSearch } from "../../utils/fare";
+
+const TRIP_ICONS = { airport: Plane, oneway: ArrowRight, roundtrip: Repeat, hourly: Clock };
+
+let stopSeq = 0;
+const newStop = (place = null) => ({ id: ++stopSeq, place });
 
 // Local YYYY-MM-DD (not UTC — bookings are made in IST evenings too).
 const todayStr = () => {
@@ -54,6 +61,9 @@ export default function TripPlanner({
   const [type, setType] = useState(initial?.type || "airport");
   const [pickup, setPickup] = useState(initial?.pickup || null);
   const [drop, setDrop] = useState(initial?.drop || null);
+  // Intermediate stops (outstation only), in travel order. Each row keeps a
+  // stable id so React doesn't mix up inputs when one is removed/reordered.
+  const [stops, setStops] = useState(() => (initial?.stops || []).map((p) => newStop(p)));
   const [date, setDate] = useState(initial?.date || "");
   const [time, setTime] = useState(initial?.time || "");
   const [returnDate, setReturnDate] = useState(initial?.returnDate || "");
@@ -71,9 +81,29 @@ export default function TripPlanner({
   const swap = () => {
     setPickup(drop);
     setDrop(pickup);
+    setStops((list) => [...list].reverse());
     clearError("pickup");
     clearError("drop");
   };
+
+  const supportsStops = STOP_TRIP_TYPES.includes(type);
+  const addStop = () => setStops((list) => (list.length >= MAX_STOPS ? list : [...list, newStop()]));
+  const removeStop = (id) => {
+    setStops((list) => list.filter((st) => st.id !== id));
+    clearError("stops");
+  };
+  const setStopPlace = (id, place) => {
+    setStops((list) => list.map((st) => (st.id === id ? { ...st, place } : st)));
+    clearError("stops");
+  };
+  const moveStop = (index, dir) =>
+    setStops((list) => {
+      const j = index + dir;
+      if (j < 0 || j >= list.length) return list;
+      const next = [...list];
+      [next[index], next[j]] = [next[j], next[index]];
+      return next;
+    });
 
   const validate = () => {
     const e = {};
@@ -89,6 +119,9 @@ export default function TripPlanner({
       if (!returnDate) e.returnDate = "Choose a return date";
       else if (date && returnDate < date) e.returnDate = "Return must be on/after departure";
     }
+    if (supportsStops && stops.some((st) => !st.place)) {
+      e.stops = "Select each stop from the suggestions, or remove it";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -96,12 +129,26 @@ export default function TripPlanner({
   const handleSubmit = (ev) => {
     ev.preventDefault();
     if (!validate()) return;
-    const search = { type, pickup, drop, date, time, returnDate, returnTime, pkg };
+    const search = {
+      type, pickup, drop, date, time, returnDate, returnTime, pkg,
+      stops: supportsStops ? stops.map((st) => st.place) : [],
+    };
     navigate(`/book/results?${encodeSearch(search)}`);
     onSubmitted?.(search);
   };
 
   const firstError = Object.values(errors).find(Boolean);
+
+  // Arrow keys move between trip types (WAI-ARIA tabs pattern).
+  const onTabKey = (e) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const i = TRIP_TYPES.findIndex((t) => t.key === type);
+    const next = TRIP_TYPES[(i + step + TRIP_TYPES.length) % TRIP_TYPES.length];
+    switchType(next.key);
+    document.getElementById(`trip-tab-${next.key}`)?.focus();
+  };
 
   // ------------------------------------------------------------------ panel —
   if (variant === "panel") {
@@ -135,6 +182,13 @@ export default function TripPlanner({
             </PlannerField>
           )}
         </div>
+
+        {supportsStops && (
+          <StopsEditor
+            stops={stops} error={errors.stops} onAdd={addStop} onRemove={removeStop}
+            onSelect={setStopPlace} onMove={moveStop}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <PlannerField label={type === "hourly" ? "Pickup Date" : "Departure"} error={errors.date}
@@ -192,31 +246,34 @@ export default function TripPlanner({
 
   return (
     <div>
-      {/* Trip-type tabs */}
-      <div role="tablist" aria-label="Trip type" className="flex flex-wrap items-center justify-center gap-2 mb-4">
+      {/* Trip-type tabs — a solid card so the choices read over the hero
+          video; the active type is filled gold with a check-style dot. */}
+      <div
+        role="tablist"
+        aria-label="Trip type"
+        onKeyDown={onTabKey}
+        className="grid grid-cols-2 sm:inline-flex sm:flex-wrap sm:justify-center gap-1.5 p-1.5 mb-4 rounded-2xl bg-white/95 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-xl shadow-black/10"
+      >
         {TRIP_TYPES.map((t) => {
           const active = t.key === type;
+          const Icon = TRIP_ICONS[t.key];
           return (
             <button
               key={t.key}
               type="button"
               role="tab"
+              id={`trip-tab-${t.key}`}
               aria-selected={active}
+              tabIndex={active ? 0 : -1}
               onClick={() => switchType(t.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-xl text-xs sm:text-[13px] tracking-wide transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900 ${
                 active
-                  ? "bg-gold text-zinc-950 shadow-md shadow-gold/25"
-                  : "text-zinc-600 dark:text-zinc-300 border border-zinc-300 dark:border-white/15 hover:border-gold/50 hover:text-gold"
+                  ? "bg-gold text-zinc-950 font-bold shadow-md shadow-gold/30"
+                  : "text-zinc-700 dark:text-zinc-200 font-semibold hover:bg-gold/10 hover:text-zinc-950 dark:hover:text-white"
               }`}
             >
-              <span
-                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                  active ? "border-zinc-950 bg-zinc-950" : "border-current"
-                }`}
-              >
-                {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
-              </span>
-              {t.label}
+              <Icon className={`w-4 h-4 shrink-0 ${active ? "text-zinc-950" : "text-gold-dark dark:text-gold"}`} aria-hidden="true" />
+              <span className="leading-tight whitespace-nowrap">{t.label}</span>
             </button>
           );
         })}
@@ -308,9 +365,74 @@ export default function TripPlanner({
             </div>
           </div>
         )}
+
+        {supportsStops && (
+          <div className="border-t border-zinc-200 dark:border-white/10 px-4 py-3">
+            <StopsEditor
+              inline stops={stops} error={errors.stops} onAdd={addStop} onRemove={removeStop}
+              onSelect={setStopPlace} onMove={moveStop}
+            />
+          </div>
+        )}
       </form>
 
       {firstError && <p className="text-red-400 text-xs mt-2 text-center animate-fade-in">{firstError}</p>}
+    </div>
+  );
+}
+
+/**
+ * Intermediate stops between pickup and drop: add (up to MAX_STOPS), remove,
+ * and reorder with up/down buttons. `inline` = the hero bar (lighter chrome).
+ */
+function StopsEditor({ stops, error, onAdd, onRemove, onSelect, onMove, inline = false }) {
+  const iconBtn =
+    "w-7 h-7 flex items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-gold hover:bg-gold/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold cursor-pointer disabled:cursor-default";
+
+  return (
+    <div className="text-left">
+      {stops.length > 0 && (
+        <ol className={`space-y-2 ${inline ? "mb-2" : "mb-3"}`}>
+          {stops.map((st, i) => (
+            <li
+              key={st.id}
+              className={`flex items-center gap-2 rounded-xl border ${
+                error && !st.place ? "border-red-400" : "border-zinc-200 dark:border-white/10"
+              } bg-white/70 dark:bg-white/5 pl-3 pr-1 py-1.5`}
+            >
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-gold w-12">Stop {i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <PlaceAutocomplete
+                  value={st.place}
+                  onSelect={(p) => onSelect(st.id, p)}
+                  placeholder="Add a stop on the way"
+                  error={!!error && !st.place}
+                />
+              </div>
+              <div className="flex items-center shrink-0">
+                <button type="button" onClick={() => onMove(i, -1)} disabled={i === 0} className={iconBtn} aria-label={`Move stop ${i + 1} earlier`}>
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={() => onMove(i, 1)} disabled={i === stops.length - 1} className={iconBtn} aria-label={`Move stop ${i + 1} later`}>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={() => onRemove(st.id)} className={`${iconBtn} hover:!text-red-500 hover:!bg-red-500/10`} aria-label={`Remove stop ${i + 1}`}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+      {stops.length < MAX_STOPS && (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gold-dark dark:text-gold hover:text-gold rounded-lg px-1 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" /> {stops.length ? "Add another stop" : "Add a stop on the way"}
+        </button>
+      )}
     </div>
   );
 }

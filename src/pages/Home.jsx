@@ -16,7 +16,7 @@ export default function Home({ onBookNowClick }) {
   return (
     <>
       <Hero />
-      <Recognition />
+      <Recognition onBookNowClick={onBookNowClick} />
       <Services onBookNowClick={onBookNowClick} />
       <Stories />
       <Reviews />

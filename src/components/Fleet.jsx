@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Shield, Info, Loader2, AlertCircle, CheckCircle, X } from "lucide-react";
+import { Users, Shield, Info, Loader2, AlertCircle, X } from "lucide-react";
 import innovaCrystaImg from "../assets/innova-crysta.webp";
 import { getVehicles, mediaUrl } from "../utils/api";
 
@@ -103,7 +103,6 @@ export default function Fleet({ onBookNowClick }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filtered.map((vehicle) => {
                 const cover = coverFor(vehicle);
-                const booked = vehicle.available === false;
                 const lp = vehicle.localPricing || {};
                 return (
                   <div
@@ -129,12 +128,6 @@ export default function Fleet({ onBookNowClick }) {
                         <span>{vehicle.seats} seats</span>
                       </div>
 
-                      {/* Availability badge */}
-                      <div className={`absolute bottom-4 left-4 px-3 py-1 rounded-full text-[10px] uppercase font-bold flex items-center gap-1.5 backdrop-blur-md border ${
-                        booked ? "bg-red-500/20 border-red-400/40 text-red-100" : "bg-emerald-500/20 border-emerald-400/40 text-emerald-100"
-                      }`}>
-                        {booked ? "Currently Booked" : <><CheckCircle className="w-3 h-3" /> Available</>}
-                      </div>
 
                       <div className="absolute top-4 right-4 bg-white/90 dark:bg-zinc-950/80 backdrop-blur-md border border-gold/40 px-3.5 py-1.5 rounded-full shadow-sm">
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">Outstation: </span>
@@ -194,15 +187,10 @@ export default function Fleet({ onBookNowClick }) {
 
                       {/* Action */}
                       <button
-                        onClick={() => !booked && onBookNowClick({ name: vehicle.name, type: "vehicle", vehicle })}
-                        disabled={booked}
-                        className={`w-full py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 ${
-                          booked
-                            ? "bg-zinc-200 dark:bg-white/5 text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
-                            : "bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 dark:hover:text-zinc-950 text-zinc-800 dark:text-white cursor-pointer"
-                        }`}
+                        onClick={() => onBookNowClick({ name: vehicle.name, type: "vehicle", vehicle })}
+                        className="w-full py-3 text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 bg-zinc-100 dark:bg-white/5 hover:bg-gold hover:text-zinc-950 dark:hover:text-zinc-950 text-zinc-800 dark:text-white cursor-pointer"
                       >
-                        {booked ? "Booked — Choose Another" : "Book Now"}
+                        Book Now
                       </button>
                     </div>
                   </div>
@@ -222,6 +210,7 @@ export default function Fleet({ onBookNowClick }) {
             {[
               "Excludes Toll Gate fees & Parking charges.",
               "Excludes State Entry Tax & Permits.",
+              "Listed rates are before 5% GST, which is added to every booking.",
               "Excludes Hill Station entry charges.",
               "Night allowance of ₹200 to ₹500 applies for driving between 10:00 PM and 5:00 AM (varies per vehicle).",
             ].map((t) => (

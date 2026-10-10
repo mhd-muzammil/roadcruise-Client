@@ -8,6 +8,7 @@ import {
   VEHICLE_OPTIONS, NO_PREFERENCE, vehicleOptionText, findVehicleByName, findVehicleByValue,
   loadVehicleOptions,
 } from "../data/vehicles";
+import { withGst, formatINR } from "../utils/fare";
 
 // Dynamically load Razorpay's hosted checkout (only when needed). The hosted
 // widget handles card/UPI/netbanking securely — no raw card data ever touches
@@ -113,7 +114,6 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   // and the offline fallback list): "online" | "offline" | "partial".
   const pkgPayMode = mode === "package" ? packageMeta?.paymentMode || null : null;
   const advancePct = Number(packageMeta?.advancePercent) || 20;
-  const allowOnline = pkgPayMode !== "offline";
   const allowArrival = pkgPayMode === null || pkgPayMode === "offline";
 
   const [formData, setFormData] = useState({
@@ -129,12 +129,19 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   // Indicative fare — the team confirms the final amount. Packages keep the
   // listed package price; otherwise the chosen vehicle's 8h local-package rate
   // is the estimate, falling back to the fleet card's rate or a flat base.
-  const fare =
+  const baseFare =
     mode === "package"
       ? parsePrice(packageMeta?.price) || 4800
       : selectedVehicle?.eightHours ||
         parsePrice(vehicleMeta?.localPricing?.eightHours) ||
         2500;
+  // Shown with 5% GST on top. The server prices the booking from the package /
+  // vehicle record itself; `baseFare` is only used for an unpriced enquiry.
+  const { gstAmount, total: fare } = withGst(baseFare);
+  // No server-side rate (enquiry with no vehicle, or an offline-list package):
+  // our team confirms the fare first, so it can't be paid online.
+  const estimateOnly = mode === "package" ? !pkgPayMode : !selectedVehicle;
+  const allowOnline = pkgPayMode !== "offline" && !estimateOnly;
   const [errors, setErrors] = useState({});
   const [processingStatus, setProcessingStatus] = useState("Opening secure payment…");
   const [result, setResult] = useState(null); // { booking, mode }
@@ -220,14 +227,6 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
       setStep("auth_prompt");
       return;
     }
-    // 409 => the chosen vehicle is fully booked. Refresh availability and send
-    // the user back to the form to pick another vehicle.
-    if (err?.status === 409) {
-      loadVehicleOptions().then((opts) => setVehicleOptions([...opts]));
-      setApiError(err?.message || "This vehicle is already booked — please choose another.");
-      setStep("form");
-      return;
-    }
     setApiError(err?.message || "Could not create booking");
     setStep("pay");
   };
@@ -254,7 +253,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
     passengers: formData.passengers,
     pickupTime: formData.pickupTime,
     notes: formData.notes,
-    fare,
+    fare: baseFare,
     paymentMode,
     paymentMethod: paymentMode === "arrival" ? "Pay on arrival" : "Online",
     // The server re-applies the package's payment rule; these just keep the
@@ -549,10 +548,9 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                       <option value={formData.vehiclePreference}>{formData.vehiclePreference}</option>
                     )}
                   {vehicleOptions.map((v) => {
-                    const booked = v.available === false;
                     return (
-                      <option key={v.id} value={vehicleOptionText(v)} disabled={booked}>
-                        {vehicleOptionText(v)}{booked ? " — currently booked" : ""}
+                      <option key={v.id} value={vehicleOptionText(v)}>
+                        {vehicleOptionText(v)}
                       </option>
                     );
                   })}
@@ -657,9 +655,10 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   <p className="text-[11px] uppercase tracking-wider text-zinc-500">Estimated Fare</p>
                   <p className="text-xs text-zinc-500 mt-0.5">
                     {mode === "package" ? "Package price" : "Based on the 8h local package rate"}
+                    {" · "}₹{formatINR(baseFare)} + 5% GST (₹{formatINR(gstAmount)})
                   </p>
                 </div>
-                <span className="text-xl font-bold font-serif text-gold">₹{fare.toLocaleString("en-IN")}</span>
+                <span className="text-xl font-bold font-serif text-gold">₹{formatINR(fare)}</span>
               </div>
               <p className="text-[11px] text-zinc-400 -mt-2">
                 Indicative estimate. Our team confirms the final fare based on distance, tolls and your requirements.
@@ -694,7 +693,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   <p className="text-[11px] uppercase tracking-wider text-zinc-500">Estimated Fare</p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{selectedItem?.name || "Booking"}</p>
                 </div>
-                <span className="text-xl font-bold font-serif text-gold">₹{fare.toLocaleString("en-IN")}</span>
+                <span className="text-xl font-bold font-serif text-gold">₹{formatINR(fare)}</span>
               </div>
               <p className="text-[11px] text-zinc-400 dark:text-zinc-500 -mt-2">
                 Indicative estimate. Our team confirms the final fare based on distance, tolls and your requirements.
@@ -709,7 +708,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   {pkgPayMode === "offline" && "This package is paid offline — reserve now and pay our team in person."}
                   {pkgPayMode === "online" && "This package requires full payment online to confirm your booking."}
                   {pkgPayMode === "partial" &&
-                    `Pay ${advancePct}% (₹${Math.max(1, Math.round(fare * advancePct / 100)).toLocaleString("en-IN")}) online now to confirm; the balance is paid later.`}
+                    `Pay ${advancePct}% (₹${formatINR(Math.max(1, Math.round(fare * advancePct / 100)))}) online now to confirm; the balance is paid later.`}
                 </p>
               )}
 
@@ -780,7 +779,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">Amount payable</span>
-                    <span className="text-xl font-bold font-serif text-zinc-900 dark:text-white">₹{fare.toLocaleString("en-IN")}</span>
+                    <span className="text-xl font-bold font-serif text-zinc-900 dark:text-white">₹{formatINR(fare)}</span>
                   </div>
                   <div className="flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-white/10 p-3 opacity-70">
                     <CreditCard className="w-5 h-5 text-zinc-400" />
@@ -839,7 +838,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 </div>
                 <div className="flex justify-between"><span>Booking Reference:</span><span className="text-zinc-900 dark:text-zinc-100 font-semibold">{result?.booking?.id}</span></div>
                 <div className="flex justify-between"><span>Duration:</span><span className="text-zinc-900 dark:text-zinc-100">{formData.fromDate} to {formData.toDate}</span></div>
-                <div className="flex justify-between"><span>Amount Paid:</span><span className="text-zinc-900 dark:text-zinc-100">₹{fare.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span>Amount Paid:</span><span className="text-zinc-900 dark:text-zinc-100">₹{formatINR(Number(result?.booking?.advanceAmount) || result?.booking?.fare || fare)}</span></div>
               </div>
               <button
                 onClick={onClose}
@@ -868,7 +867,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                 </div>
                 <div className="flex justify-between"><span>Booking Reference:</span><span className="text-zinc-900 dark:text-zinc-100 font-semibold">{result?.booking?.id}</span></div>
                 <div className="flex justify-between"><span>Duration:</span><span className="text-zinc-900 dark:text-zinc-100">{formData.fromDate} to {formData.toDate}</span></div>
-                <div className="flex justify-between"><span>Estimated Fare:</span><span className="text-zinc-900 dark:text-zinc-100">₹{fare.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span>Total (incl. GST):</span><span className="text-zinc-900 dark:text-zinc-100">₹{formatINR(result?.booking?.fare ?? fare)}</span></div>
               </div>
               <button
                 onClick={onClose}

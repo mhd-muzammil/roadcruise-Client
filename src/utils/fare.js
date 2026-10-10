@@ -1,11 +1,7 @@
-// Fare engine for the trip-planner flow (hero widget -> results -> checkout).
-// Every quote is derived from the SAME admin-managed vehicle record served by
-// GET /api/vehicles ({ outstationRate, driverBata, localPricing }), so admin
-// rate edits flow straight into the quoted prices — no second rate table.
-//
-// Quotes are indicative (the site already frames fares that way); the billing
-// conventions below are the standard Indian intercity-cab market rules and are
-// centralized in FARE_RULES so the business can tune them in one place.
+// Trip-planner helpers (hero widget -> results -> checkout). Prices are NOT
+// computed here: POST /api/bookings/quote prices every vehicle server-side and
+// the booking is re-priced by the same code, so the browser only displays the
+// server's breakdown (see components/booking/FareBreakdown.jsx).
 
 export const TRIP_TYPES = [
   { key: "airport", label: "Airport Transfers", short: "Airport Transfer" },
@@ -16,162 +12,78 @@ export const TRIP_TYPES = [
 
 export const tripTypeByKey = (key) => TRIP_TYPES.find((t) => t.key === key) || null;
 
+// Hourly package choices for the planner's select. The server prices each from
+// the vehicle's localPricing and stores the chosen duration on the booking.
 export const HOURLY_PACKAGES = [
-  { key: "4h40", label: "4 hrs 40 kms", hours: 4, kms: 40, priceKey: "fourHours" },
-  { key: "8h80", label: "8 hrs 80 kms", hours: 8, kms: 80, priceKey: "eightHours" },
-  { key: "12h120", label: "12 hrs 120 kms", hours: 12, kms: 120, priceKey: "twelveHours" },
+  { key: "4h40", label: "4 hrs 40 kms", hours: 4, kms: 40 },
+  { key: "8h80", label: "8 hrs 80 kms", hours: 8, kms: 80 },
+  { key: "12h120", label: "12 hrs 120 kms", hours: 12, kms: 120 },
 ];
 
 export const hourlyPackageByKey = (key) =>
   HOURLY_PACKAGES.find((p) => p.key === key) || HOURLY_PACKAGES[1]; // default 8h/80km
 
-export const FARE_RULES = {
-  airportMinKm: 30, // airport transfers bill at least this many km
-  onewayMinKm: 130, // one-way OUTSTATION trips bill at least this many km
-  roundtripMinKmPerDay: 250, // OUTSTATION round trips bill at least this many km per day
-  // At/below this one-way distance a trip is a LOCAL drop (home -> airport,
-  // suburb -> suburb), not an outstation run — the outstation minimums above
-  // must NOT apply, or a 15 km hop gets billed as a 130 km trip.
-  localTripKm: 50,
-  freeWaitingMins: 30,
-  advanceRate: 0.2, // 20% deposit option — keep in sync with the server's ADVANCE_RATE
+// Intermediate stops: outstation trips only, same limit the server enforces.
+export const STOP_TRIP_TYPES = ["oneway", "roundtrip"];
+export const MAX_STOPS = 5;
+
+// GST added on top of every booking subtotal. Display-only mirror of the
+// server's GST_RATE_PERCENT, used where a price is shown before the server has
+// priced it (the classic booking form); the booking stores the server's figure.
+export const GST_RATE_PERCENT = 5;
+export const withGst = (subtotal) => {
+  const base = Math.round(Number(subtotal || 0) * 100) / 100;
+  const gst = Math.round(base * GST_RATE_PERCENT) / 100;
+  return { subtotal: base, gstRate: GST_RATE_PERCENT, gstAmount: gst, total: Math.round((base + gst) * 100) / 100 };
 };
 
-/** "12,345" formatting for rupee amounts. */
-export const formatINR = (n) =>
-  Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
-
-/** Whole days a round trip spans (same-day return = 1). */
-export const tripDays = (fromDate, toDate) => {
-  const a = new Date(`${fromDate}T00:00:00`);
-  const b = new Date(`${toDate || fromDate}T00:00:00`);
-  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 1;
-  return Math.max(1, Math.round((b - a) / 86400000) + 1);
+/** "12,345" / "12,345.50" formatting for rupee amounts (paise shown only when present). */
+export const formatINR = (n) => {
+  const v = Number(n || 0);
+  const d = Number.isInteger(v) ? 0 : 2;
+  return v.toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 
 /**
- * Quote one vehicle for a search. Returns null when the vehicle can't serve
- * this trip type (e.g. no hourly package prices configured).
- *
- * search: { type, distanceKm?, days?, pkg? }
- * vehicle: the raw GET /api/vehicles record.
- *
- * Returns { fare, billKm, days, perKm, pkg, included: string[], excluded: string[] }
+ * The server's stored price breakdown for a booking. Bookings made before
+ * itemised pricing existed carry only `fare`, so they get one line and no GST
+ * split rather than a guessed one.
  */
-export function quoteForVehicle(vehicle, search) {
-  const perKm = Number(vehicle?.outstationRate) || 0;
-  const bata = Number(vehicle?.driverBata) || 0;
-  const local = vehicle?.localPricing || {};
-  const type = search?.type;
+export const bookingPricing = (b = {}) =>
+  b.pricing && Array.isArray(b.pricing.lines)
+    ? b.pricing
+    : {
+        source: "legacy",
+        lines: [{ key: "fare", label: "Trip fare", detail: "", amount: Number(b.fare) || 0 }],
+        subtotal: Number(b.fare) || 0,
+        gstRate: null,
+        gstAmount: null,
+        total: Number(b.fare) || 0,
+      };
 
-  if (type === "hourly") {
-    const pkg = hourlyPackageByKey(search?.pkg);
-    const price = Number(local[pkg.priceKey]) || 0;
-    if (price <= 0) return null;
-    const extraKm = Number(local.extraKm) || 0;
-    const extraHr = Number(local.extraHr) || 0;
-    return {
-      fare: Math.round(price),
-      billKm: pkg.kms,
-      days: 1,
-      perKm,
-      pkg,
-      included: [
-        `${pkg.hours} hours & ${pkg.kms} km included`,
-        "Driver allowance",
-        "Fuel & vehicle charges",
-      ],
-      excluded: [
-        "Road tolls & parking, if any",
-        extraKm ? `Extra km @ ₹${extraKm}/km` : "Extra km charged as per tariff",
-        extraHr ? `Extra hour @ ₹${extraHr}/hr` : "Extra hours charged as per tariff",
-      ],
-    };
-  }
+/**
+ * Booking distance for display. Round trips show both legs, e.g.
+ * "670 km × 2 (up & down) = 1,340 km" (from the stored pricing).
+ */
+export const distanceText = (b = {}) => {
+  const p = b.pricing || {};
+  const n = (v) => Number(v).toLocaleString("en-IN");
+  if (p.roundTripKm && p.oneWayKm) return `${n(p.oneWayKm)} km × 2 (up & down) = ${n(p.roundTripKm)} km`;
+  return b.distanceKm ? `${n(b.distanceKm)} km` : "";
+};
 
-  if (perKm <= 0) return null;
-  const distanceKm = Math.max(1, Math.round(Number(search?.distanceKm) || 0));
-  if (!distanceKm) return null;
-
-  if (type === "airport") {
-    const billKm = Math.max(distanceKm, FARE_RULES.airportMinKm);
-    return {
-      fare: Math.round(billKm * perKm),
-      billKm,
-      days: 1,
-      perKm,
-      pkg: null,
-      included: [
-        `${billKm} km included`,
-        "Driver allowance",
-        `${FARE_RULES.freeWaitingMins} mins free waiting from trip start`,
-      ],
-      excluded: [
-        "Airport entry, tolls & parking, if any",
-        `Travel beyond ${billKm} km @ ₹${perKm}/km`,
-        `Waiting beyond ${FARE_RULES.freeWaitingMins} mins, as per tariff`,
-      ],
-    };
-  }
-
-  if (type === "oneway") {
-    // Local drop vs genuine outstation: short trips bill actual km (min 30,
-    // like an airport transfer, no outstation bata); the 130 km floor + bata
-    // apply only beyond localTripKm.
-    const isLocal = distanceKm <= FARE_RULES.localTripKm;
-    const billKm = Math.max(distanceKm, isLocal ? FARE_RULES.airportMinKm : FARE_RULES.onewayMinKm);
-    return {
-      fare: Math.round(billKm * perKm + (isLocal ? 0 : bata)),
-      billKm,
-      days: 1,
-      perKm,
-      pkg: null,
-      included: [
-        `${billKm} km included`,
-        isLocal || !bata ? "Driver allowance" : `Driver bata ₹${formatINR(bata)}`,
-        "One-way drop — pay only for this direction",
-      ],
-      excluded: [
-        "Road tolls, parking & interstate permits, if any",
-        `Travel beyond ${billKm} km @ ₹${perKm}/km`,
-        "Night driving allowance (11 PM – 5 AM), if applicable",
-      ],
-    };
-  }
-
-  if (type === "roundtrip") {
-    const days = Math.max(1, Number(search?.days) || 1);
-    // A same-day return within localTripKm is a local up-down (e.g. an airport
-    // pick-up-and-return), not an outstation tour — bill both directions at
-    // actual km (min 30 each way) instead of the 250 km/day outstation floor.
-    // Driver bata still applies: the driver waits and drives back.
-    const isLocal = days === 1 && distanceKm <= FARE_RULES.localTripKm;
-    const billKm = isLocal
-      ? Math.max(distanceKm * 2, FARE_RULES.airportMinKm * 2)
-      : Math.max(distanceKm * 2, FARE_RULES.roundtripMinKmPerDay * days);
-    return {
-      fare: Math.round(billKm * perKm + bata * days),
-      billKm,
-      days,
-      perKm,
-      pkg: null,
-      included: [
-        `${formatINR(billKm)} km included (${days} day${days > 1 ? "s" : ""})`,
-        bata
-          ? `Driver bata ₹${formatINR(bata)}/day × ${days}`
-          : "Driver allowance",
-        "Vehicle at your disposal for the entire trip",
-      ],
-      excluded: [
-        "Road tolls, parking & interstate permits, if any",
-        `Travel beyond ${formatINR(billKm)} km @ ₹${perKm}/km`,
-        ...(isLocal ? [] : [`Minimum billing ${FARE_RULES.roundtripMinKmPerDay} km/day`]),
-      ],
-    };
-  }
-
-  return null;
-}
+/** The POST /api/bookings `trip` payload for a decoded search. */
+export const tripFromSearch = (search) => ({
+  type: search.type,
+  pickup: search.pickup,
+  drop: search.type === "hourly" ? null : search.drop,
+  stops: STOP_TRIP_TYPES.includes(search.type) ? search.stops || [] : [],
+  date: search.date,
+  time: search.time,
+  returnDate: search.type === "roundtrip" ? search.returnDate : "",
+  returnTime: search.type === "roundtrip" ? search.returnTime : "",
+  pkg: search.type === "hourly" ? search.pkg : "",
+});
 
 // ---------------------------------------------------------------------------
 // Search <-> URL round-trip. The results page lives at /book/results?…, so a
@@ -194,6 +106,9 @@ export function encodeSearch(search) {
     p.set("dlat", String(search.drop.lat));
     p.set("dlon", String(search.drop.lon));
   }
+  if (STOP_TRIP_TYPES.includes(search.type)) {
+    for (const st of search.stops || []) p.append("s", `${st.lat},${st.lon},${st.label}`);
+  }
   if (search.type === "roundtrip") {
     p.set("rdate", search.returnDate);
     if (search.returnTime) p.set("rtime", search.returnTime);
@@ -215,7 +130,7 @@ export function decodeSearch(params) {
   const time = params.get("time") || "";
   if (!pickup.label || !isCoord(pickup.lat) || !isCoord(pickup.lon) || !date || !time) return null;
 
-  const search = { type, pickup, drop: null, date, time, returnDate: "", returnTime: "", pkg: "" };
+  const search = { type, pickup, drop: null, stops: [], date, time, returnDate: "", returnTime: "", pkg: "" };
 
   if (type !== "hourly") {
     const drop = {
@@ -225,6 +140,15 @@ export function decodeSearch(params) {
     };
     if (!drop.label || !isCoord(drop.lat) || !isCoord(drop.lon)) return null;
     search.drop = drop;
+  }
+  if (STOP_TRIP_TYPES.includes(type)) {
+    // "lat,lon,label" — the label may itself contain commas.
+    for (const raw of params.getAll("s").slice(0, MAX_STOPS)) {
+      const [lat, lon, ...rest] = raw.split(",");
+      const stop = { label: rest.join(",").trim(), lat: Number(lat), lon: Number(lon) };
+      if (!stop.label || !isCoord(lat) || !isCoord(lon)) return null;
+      search.stops.push(stop);
+    }
   }
   if (type === "roundtrip") {
     search.returnDate = params.get("rdate") || "";

@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
-  Megaphone, Download, Send, Eye, EyeOff, Clock, Package as PackageIcon, Pencil,
+  Megaphone, Download, Send, Eye, EyeOff, Clock, Package as PackageIcon, Pencil, Search, ChevronDown,
 } from "lucide-react";
+import FareBreakdown, { RouteTimeline } from "./booking/FareBreakdown";
+import { bookingPricing, distanceText, formatINR } from "../utils/fare";
 import {
   fetchBookings, updateBooking, deleteBooking,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
@@ -25,7 +27,7 @@ const TABS = [
 const CATEGORIES = ["Sedans", "SUVs", "Tempo Travellers", "Mini Buses", "Luxury", "Other"];
 const DRIVERS = ["None", "Arjun Singh", "Ramesh Kumar", "Karthik Raja", "Sathish Nair"];
 
-const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+const inr = (n) => `₹${formatINR(n)}`;
 const inputCls =
   "w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-lg py-2 px-3 text-xs focus:outline-none focus:border-gold text-zinc-800 dark:text-zinc-100";
 
@@ -243,9 +245,24 @@ function statusCls(s) {
     : "bg-red-500/10 text-red-500";
 }
 
+const stopsOf = (b) => (Array.isArray(b.stops) ? b.stops.map((s) => s?.label || s).filter(Boolean) : []);
+const rentalOf = (b) => (b.rental?.hours ? `${b.rental.hours} hrs · ${b.rental.kms} km` : "");
+
+const SORTS = {
+  created: { label: "Newest booked", fn: (a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) },
+  travelAsc: { label: "Travel date — soonest", fn: (a, b) => String(a.fromDate || "").localeCompare(String(b.fromDate || "")) },
+  travelDesc: { label: "Travel date — latest", fn: (a, b) => String(b.fromDate || "").localeCompare(String(a.fromDate || "")) },
+  fareDesc: { label: "Fare — highest", fn: (a, b) => (Number(b.fare) || 0) - (Number(a.fare) || 0) },
+};
+const STATUS_FILTERS = ["All", "Pending", "PendingPayment", "Approved", "Completed", "Cancelled"];
+
 function BookingsTab({ bookings, reload, reloadVehicles }) {
   const [busy, setBusy] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [sort, setSort] = useState("created");
+  const [openId, setOpenId] = useState(null);
 
   const exportXlsx = async () => {
     setExporting(true);
@@ -273,10 +290,22 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
     finally { setBusy(null); }
   };
 
+  const q = query.trim().toLowerCase();
+  const visible = bookings
+    .filter((b) => statusFilter === "All" || b.status === statusFilter)
+    .filter((b) =>
+      !q ||
+      [b.id, b.name, b.phone, b.customerEmail, b.vehicle, b.item, b.pickup, b.drop, b.tripType, ...stopsOf(b)]
+        .some((v) => String(v || "").toLowerCase().includes(q))
+    )
+    .sort(SORTS[sort].fn);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">Booking Logs ({bookings.length})</h3>
+        <h3 className="text-base font-bold font-serif text-zinc-900 dark:text-white tracking-wide">
+          Booking Logs ({visible.length}{visible.length !== bookings.length ? ` of ${bookings.length}` : ""})
+        </h3>
         <button
           type="button"
           onClick={exportXlsx}
@@ -286,13 +315,36 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
           {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Export to Excel
         </button>
       </div>
+
+      {/* Search / filter / sort */}
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
+        <label className="relative">
+          <span className="sr-only">Search bookings</span>
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <input
+            type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search ID, customer, phone, vehicle, place…"
+            className={`${inputCls} pl-8`}
+          />
+        </label>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={inputCls} aria-label="Filter by status">
+          {STATUS_FILTERS.map((s) => <option key={s} value={s}>{s === "All" ? "All statuses" : s}</option>)}
+        </select>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className={inputCls} aria-label="Sort bookings">
+          {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+      </div>
+
       <div className="w-full overflow-x-auto rounded-2xl border border-zinc-200 dark:border-white/5 shadow-xl glass-premium bg-white/40 dark:bg-zinc-900/10">
-        <table className="w-full text-left border-collapse min-w-[820px]">
+        <table className="w-full text-left border-collapse min-w-[1080px]">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-white/5 bg-zinc-100/40 dark:bg-zinc-950/20 text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">
+              <th className="p-4 w-8"><span className="sr-only">Details</span></th>
               <th className="p-4">Ref</th>
               <th className="p-4">Client</th>
-              <th className="p-4">Vehicle / Route</th>
+              <th className="p-4">Vehicle</th>
+              <th className="p-4">Pickup</th>
+              <th className="p-4">Drop</th>
               <th className="p-4">Dates</th>
               <th className="p-4">Fare</th>
               <th className="p-4">Status</th>
@@ -301,64 +353,146 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-white/5 text-xs text-zinc-700 dark:text-zinc-300">
-            {bookings.length === 0 ? (
-              <tr><td colSpan="8" className="p-8 text-center text-zinc-400 italic">No bookings yet.</td></tr>
+            {visible.length === 0 ? (
+              <tr><td colSpan="11" className="p-8 text-center text-zinc-400 italic">{bookings.length ? "No bookings match these filters." : "No bookings yet."}</td></tr>
             ) : (
-              bookings.map((b) => (
-                <tr key={b.id} className="hover:bg-zinc-100/50 dark:hover:bg-white/[0.02] transition-colors">
-                  <td className="p-4 font-mono font-bold text-zinc-900 dark:text-white">{b.id}</td>
-                  <td className="p-4">
-                    <p className="font-bold text-zinc-800 dark:text-zinc-200">{b.name}</p>
-                    <p className="text-[10px] text-zinc-400 font-mono">{b.phone}</p>
-                  </td>
-                  <td className="p-4">
-                    <p className="font-medium">{b.vehicle || b.item}</p>
-                    {(b.pickup || b.drop) && (
-                      <p className="text-[10px] text-zinc-400">{[b.pickup, b.drop].filter(Boolean).join(" → ")}</p>
+              visible.map((b) => {
+                const stops = stopsOf(b);
+                const open = openId === b.id;
+                return (
+                  <React.Fragment key={b.id}>
+                    <tr className="hover:bg-zinc-100/50 dark:hover:bg-white/[0.02] transition-colors align-top">
+                      <td className="p-4">
+                        <button
+                          type="button" onClick={() => setOpenId(open ? null : b.id)}
+                          aria-expanded={open} aria-label={`${open ? "Hide" : "Show"} details for ${b.id}`}
+                          className="p-1 rounded text-zinc-400 hover:text-gold hover:bg-gold/10"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                        </button>
+                      </td>
+                      <td className="p-4 font-mono font-bold text-zinc-900 dark:text-white">{b.id}</td>
+                      <td className="p-4">
+                        <p className="font-bold text-zinc-800 dark:text-zinc-200">{b.name}</p>
+                        <p className="text-[10px] text-zinc-400 font-mono">{b.phone}</p>
+                      </td>
+                      <td className="p-4 max-w-[180px]">
+                        <p className="font-medium break-words">{b.vehicle || b.item}</p>
+                        <span className="inline-block mt-1 text-[8px] bg-gold/10 text-gold px-1 rounded uppercase font-semibold">{b.tripType}</span>
+                        {rentalOf(b) && <p className="text-[10px] text-zinc-500 mt-1">⏱ {rentalOf(b)}</p>}
+                      </td>
+                      <td className="p-4 max-w-[200px]">
+                        <p className="break-words">{b.pickup || "—"}</p>
+                        {stops.length > 0 && (
+                          <p className="text-[10px] text-zinc-500 mt-1 break-words" title={stops.join(" → ")}>
+                            via {stops.join(" → ")}
+                          </p>
+                        )}
+                      </td>
+                      <td className="p-4 max-w-[200px] break-words">{b.drop || "—"}</td>
+                      <td className="p-4 font-mono text-[10px] whitespace-nowrap">
+                        {b.fromDate}{b.toDate && b.toDate !== b.fromDate ? ` → ${b.toDate}` : ""}
+                        {b.pickupTime && <span className="block text-zinc-400">{b.pickupTime}</span>}
+                      </td>
+                      <td className="p-4 font-mono whitespace-nowrap">
+                        <span className="font-bold text-zinc-900 dark:text-white">{inr(b.fare)}</span>
+                        {b.pricing?.gstAmount != null && (
+                          <span className="block text-[10px] text-zinc-400">incl. GST {inr(b.pricing.gstAmount)}</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${statusCls(b.status)}`}>{b.status}</span>
+                        {b.vehicleId && b.vehicleReleased && <span className="block text-[8px] text-zinc-400 mt-1">unit freed</span>}
+                      </td>
+                      <td className="p-4">
+                        <select
+                          value={b.driver || "None"}
+                          onChange={(e) => act(() => updateBooking(b.id, { driver: e.target.value }), b.id)}
+                          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-gold text-zinc-800 dark:text-zinc-300 font-medium"
+                        >
+                          {DRIVERS.map((d) => <option key={d} value={d}>{d === "None" ? "Unassigned" : d}</option>)}
+                        </select>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-1 justify-center items-center">
+                          {busy === b.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" />}
+                          {(b.status === "Pending" || b.status === "PendingPayment") && (
+                            <button onClick={() => act(() => updateBooking(b.id, { status: "Approved" }), b.id)}
+                              className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded" title="Approve">
+                              <Check className="w-4 h-4" />
+                            </button>
+                          )}
+                          {b.status !== "Cancelled" && b.status !== "Completed" && (
+                            <button onClick={() => { if (confirm(`Cancel booking ${b.id}? The customer will be emailed.`)) act(() => updateBooking(b.id, { status: "Cancelled" }), b.id); }}
+                              className="p-1 text-amber-500 hover:bg-amber-500/10 rounded" title="Cancel">
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button onClick={() => act(() => deleteBooking(b.id), b.id)}
+                            className="p-1 text-red-500 hover:bg-red-500/10 rounded" title="Delete">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="bg-zinc-50/70 dark:bg-zinc-950/30">
+                        <td colSpan="11" className="p-0">
+                          <BookingDetail b={b} />
+                        </td>
+                      </tr>
                     )}
-                    <span className="text-[8px] bg-gold/10 text-gold px-1 rounded uppercase font-semibold">{b.tripType}</span>
-                  </td>
-                  <td className="p-4 font-mono text-[10px]">{b.fromDate} → {b.toDate}</td>
-                  <td className="p-4 font-bold font-mono text-zinc-900 dark:text-white">{inr(b.fare)}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${statusCls(b.status)}`}>{b.status}</span>
-                    {b.vehicleId && b.vehicleReleased && <span className="block text-[8px] text-zinc-400 mt-1">unit freed</span>}
-                  </td>
-                  <td className="p-4">
-                    <select
-                      value={b.driver || "None"}
-                      onChange={(e) => act(() => updateBooking(b.id, { driver: e.target.value }), b.id)}
-                      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-gold text-zinc-800 dark:text-zinc-300 font-medium"
-                    >
-                      {DRIVERS.map((d) => <option key={d} value={d}>{d === "None" ? "Unassigned" : d}</option>)}
-                    </select>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-1 justify-center items-center">
-                      {busy === b.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" />}
-                      {(b.status === "Pending" || b.status === "PendingPayment") && (
-                        <button onClick={() => act(() => updateBooking(b.id, { status: "Approved" }), b.id)}
-                          className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded" title="Approve">
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
-                      {b.status !== "Cancelled" && b.status !== "Completed" && (
-                        <button onClick={() => { if (confirm(`Cancel booking ${b.id}? The customer will be emailed.`)) act(() => updateBooking(b.id, { status: "Cancelled" }), b.id); }}
-                          className="p-1 text-amber-500 hover:bg-amber-500/10 rounded" title="Cancel">
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button onClick={() => act(() => deleteBooking(b.id), b.id)}
-                        className="p-1 text-red-500 hover:bg-red-500/10 rounded" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                  </React.Fragment>
+                );
+              })
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+/** Everything about one booking on a single panel (expanded log row). */
+function BookingDetail({ b }) {
+  const facts = [
+    ["Customer", b.name],
+    ["Phone", b.phone],
+    ["Email", /@phone\.invalid$/.test(b.customerEmail || "") ? "" : b.customerEmail],
+    ["Booked on", b.createdAt ? new Date(b.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : ""],
+    ["Trip type", b.tripType],
+    ["Vehicle", b.vehicle || b.item],
+    ["Package", b.packageName],
+    ["Travel date", b.toDate && b.toDate !== b.fromDate ? `${b.fromDate} → ${b.toDate}` : b.fromDate],
+    ["Pickup time", b.pickupTime],
+    ["Return drop time", b.returnTime],
+    ["Rental duration", rentalOf(b)],
+    ["Distance", distanceText(b)],
+    ["Days", Number(b.days) > 1 ? String(b.days) : ""],
+    ["Passengers", b.passengers],
+    ["Payment", b.paymentMethod],
+    ["Advance", Number(b.advanceAmount) > 0 ? `${inr(b.advanceAmount)} online · ${inr(Math.round((b.fare - b.advanceAmount) * 100) / 100)} to driver` : ""],
+    ["Booking status", b.status],
+    ["Notes", b.notes],
+  ].filter(([, v]) => v);
+
+  return (
+    <div className="p-5 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)]">
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-2">Route</p>
+        <RouteTimeline pickup={b.pickup} stops={stopsOf(b)} drop={b.drop} />
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11px]">
+        {facts.map(([k, v]) => (
+          <div key={k} className={k === "Notes" ? "col-span-2" : ""}>
+            <dt className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold">{k}</dt>
+            <dd className="text-zinc-800 dark:text-zinc-200 font-medium break-words">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-2">Pricing</p>
+        <FareBreakdown pricing={bookingPricing(b)} compact />
       </div>
     </div>
   );
@@ -471,7 +605,7 @@ function VehicleCard({ v, busy, withBusy }) {
               <p className="text-[10px] uppercase tracking-wider text-zinc-400">{v.category} · {v.seats}</p>
             </div>
             <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${v.available ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}>
-              {v.available ? "Available" : "Fully booked"}
+              {v.available ? "Units free" : "All units on trips"}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500">

@@ -17,7 +17,14 @@
   --animate-fade-in: fade-in 0.4s ease-out both;
   --animate-promo-fade: promo-fade 0.35s ease-out both;
   --animate-promo-pop: promo-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Homepage "What's New" offers ticker: the list is rendered twice and
+     scrolls up by exactly one copy, so the loop is seamless. */
+  --animate-offers-scroll: offers-scroll var(--offers-duration, 30s) linear infinite;
 
+  @keyframes offers-scroll {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -111,4 +118,16 @@ select option {
 html.dark select option {
   background-color: #18181b;
   color: #fafafa;
+}
+
+/* Offers ticker: pause while the visitor reads (hover / keyboard focus) and
+   stay still for anyone who prefers reduced motion — the list then scrolls
+   manually instead. */
+.offers-ticker:hover .animate-offers-scroll,
+.offers-ticker:focus-within .animate-offers-scroll {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .offers-ticker .animate-offers-scroll { animation: none; }
+  .offers-ticker { overflow-y: auto; }
 }

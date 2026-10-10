@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  CircleDot, MapPin, Car, Check, X, ShieldCheck, Lock, CheckCircle,
-  Loader2, Users, Wallet, CreditCard, AlertCircle,
+  Car, Check, X, ShieldCheck, Lock, CheckCircle,
+  Loader2, Users, Wallet, CreditCard, AlertCircle, Receipt,
 } from "lucide-react";
 import { createBooking } from "../utils/api";
 import { payWithCheckout } from "../utils/payment";
 import {
-  FARE_RULES, tripTypeByKey, hourlyPackageByKey, formatINR, fmtDate, fmtTime, fmtDuration,
+  tripFromSearch, tripTypeByKey, hourlyPackageByKey, distanceText, formatINR, fmtDate, fmtTime, fmtDuration,
 } from "../utils/fare";
+import FareBreakdown, { RouteTimeline } from "../components/booking/FareBreakdown";
 
 // Selection saved by the results page. Read once; a direct visit with nothing
-// stored is redirected home by the effect below.
+// stored (or a selection saved before server-side pricing) is redirected home.
 const loadSelection = () => {
   try {
-    return JSON.parse(sessionStorage.getItem("rc_checkout") || "null");
+    const sel = JSON.parse(sessionStorage.getItem("rc_checkout") || "null");
+    return sel?.quote?.pricing ? sel : null;
   } catch {
     return null;
   }
@@ -45,7 +47,6 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
     notes: "",
   });
   const [errors, setErrors] = useState({});
-  const [tab, setTab] = useState("inclusions");
   const [plan, setPlan] = useState("advance"); // "advance" | "full" | "arrival"
   const [status, setStatus] = useState("idle"); // idle | paying | success | pending
   const [statusMsg, setStatusMsg] = useState("");
@@ -74,9 +75,14 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
   const { search, route, days, vehicle, quote } = sel;
   const trip = tripTypeByKey(search.type);
   const pkg = search.type === "hourly" ? hourlyPackageByKey(search.pkg) : null;
-  const fare = quote.fare;
-  const advance = Math.max(1, Math.round(fare * FARE_RULES.advanceRate));
-  const balance = fare - advance;
+  const stops = search.stops || [];
+  // Server-priced total (incl. GST). The deposit shown here mirrors the
+  // server's rule; the server computes the amount actually charged.
+  const fare = quote.pricing.total;
+  const advanceRate = Number(sel.advanceRate) || 0.2;
+  const advancePct = Math.round(advanceRate * 100);
+  const advance = Math.max(1, Math.round(fare * advanceRate));
+  const balance = Math.round((fare - advance) * 100) / 100;
   const payNow = plan === "advance" ? advance : plan === "full" ? fare : 0;
 
   const handleChange = (e) => {
@@ -94,47 +100,23 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
     return Object.keys(e).length === 0;
   };
 
-  const buildPayload = () => {
-    const autoNotes = [
-      pkg ? `Package: ${pkg.label}` : "",
-      search.type === "roundtrip" && search.returnTime ? `Return drop time: ${fmtTime(search.returnTime)}` : "",
-      route ? `Route estimate: ${route.distanceKm} km · ${fmtDuration(route.durationMin)}` : "",
-    ].filter(Boolean);
-    return {
-      name: form.name,
-      phone: form.phone,
-      fromDate: search.date,
-      toDate: search.type === "roundtrip" ? search.returnDate : search.date,
-      tripType: trip?.short || "One-way",
-      item: vehicle.name,
-      category: "vehicle",
-      pickup: search.pickup.label,
-      drop: search.drop?.label || "",
-      vehicle: `${vehicle.name} — ₹${vehicle.outstationRate}/km`,
-      vehicleId: vehicle.id,
-      packageName: "",
-      passengers: "",
-      pickupTime: search.time,
-      notes: [form.notes.trim(), ...autoNotes].filter(Boolean).join(" | "),
-      fare,
-      distanceKm: route?.distanceKm,
-      durationMin: route?.durationMin,
-      paymentMode: plan === "arrival" ? "arrival" : "online",
-      paymentPlan: plan === "advance" ? "advance" : "full",
-      paymentMethod: plan === "arrival" ? "Pay on arrival" : plan === "advance" ? "Online (20% advance)" : "Online",
-    };
-  };
+  // The server derives dates, route, distance, duration and every amount from
+  // `trip` + `vehicleId`; nothing price-related is sent from here.
+  const buildPayload = () => ({
+    name: form.name,
+    phone: form.phone,
+    trip: tripFromSearch(search),
+    vehicleId: vehicle.id,
+    notes: form.notes.trim(),
+    paymentMode: plan === "arrival" ? "arrival" : "online",
+    paymentPlan: plan === "advance" ? "advance" : "full",
+  });
 
   const handleError = (err) => {
     if (err?.status === 401) {
       onSessionExpired?.();
       setNotice("Your session has expired — please sign in again to continue.");
       onAuthClick?.();
-      setStatus("idle");
-      return;
-    }
-    if (err?.status === 409) {
-      setApiError("This vehicle just got booked by someone else. Please pick another cab.");
       setStatus("idle");
       return;
     }
@@ -197,10 +179,14 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
   // ------------------------------------------------------------- success ----
   if (status === "success" || status === "pending") {
     const paid = status === "success";
-    const paidAmount = plan === "advance" ? advance : fare;
+    // Everything below is the STORED booking the server returned.
+    const b = result?.booking || {};
+    const total = Number(b.fare) || fare;
+    const adv = Number(b.advanceAmount) || 0;
+    const paidAmount = adv || total;
     return (
       <section className="min-h-screen pt-32 pb-20 px-4 bg-zinc-50 dark:bg-bg-dark">
-        <div className="max-w-lg mx-auto bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-3xl p-8 md:p-10 text-center shadow-2xl animate-fade-in">
+        <div className="max-w-lg mx-auto bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 text-center shadow-2xl animate-fade-in">
           <div className="w-16 h-16 mx-auto bg-gold/10 rounded-full flex items-center justify-center border border-gold/30 shadow-lg shadow-gold/10 mb-5">
             <CheckCircle className="w-8 h-8 text-gold" />
           </div>
@@ -214,14 +200,24 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
           </p>
 
           <div className="mt-6 bg-zinc-50 dark:bg-white/5 rounded-2xl divide-y divide-zinc-200 dark:divide-white/5 text-left">
-            <SummaryLine label="Booking Ref" value={result?.booking?.id} strong />
-            <SummaryLine label="Vehicle" value={vehicle.name} />
-            <SummaryLine label="Trip" value={`${trip?.short} · ${fmtDate(search.date)} · ${fmtTime(search.time)}`} />
-            {paid && <SummaryLine label="Paid Now" value={`₹ ${formatINR(paidAmount)}`} />}
-            {paid && plan === "advance" && (
-              <SummaryLine label="Balance to Driver" value={`₹ ${formatINR(balance)}`} />
+            <SummaryLine label="Booking ID" value={b.id} strong />
+            <SummaryLine label="Vehicle" value={b.vehicle || vehicle.name} />
+            <SummaryLine label="Trip Type" value={b.tripType || trip?.short} />
+            <SummaryLine label="Date & Time" value={`${fmtDate(b.fromDate || search.date)} · ${fmtTime(b.pickupTime || search.time)}`} />
+            {b.rental?.hours && <SummaryLine label="Duration" value={`${b.rental.hours} hours · ${b.rental.kms} km`} />}
+            {b.distanceKm && <SummaryLine label="Distance" value={distanceText(b)} />}
+            <div className="px-5 py-3">
+              <RouteTimeline pickup={b.pickup || search.pickup.label} stops={b.stops || stops} drop={b.drop || search.drop?.label} />
+            </div>
+            {b.pricing && (
+              <div className="px-5 py-3">
+                <FareBreakdown pricing={b.pricing} compact />
+              </div>
             )}
-            {!paid && <SummaryLine label="Total Fare" value={`₹ ${formatINR(fare)}`} />}
+            {paid && <SummaryLine label="Paid Now" value={`₹ ${formatINR(paidAmount)}`} />}
+            {paid && adv > 0 && (
+              <SummaryLine label="Balance to Driver" value={`₹ ${formatINR(Math.round((total - adv) * 100) / 100)}`} />
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-7">
@@ -251,37 +247,25 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
         <aside className="lg:sticky lg:top-24 bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-xl shadow-black/5">
           <p className="text-[10px] uppercase tracking-wider text-gold font-bold mb-4">Ride Details</p>
 
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CircleDot className="w-4 h-4 text-gold shrink-0 mt-1" />
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Pickup</p>
-                <p className="text-sm font-medium text-zinc-900 dark:text-white leading-snug">{search.pickup.label}</p>
-              </div>
-            </div>
-            {search.drop && (
-              <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-gold shrink-0 mt-1" />
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Drop</p>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-white leading-snug">{search.drop.label}</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <RouteTimeline pickup={search.pickup.label} stops={stops} drop={search.drop?.label} />
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-4 mt-5 pt-5 border-t border-zinc-100 dark:border-white/5">
-            <DetailRow label="Date" value={fmtDate(search.date)} />
-            <DetailRow label="Time" value={fmtTime(search.time)} />
+            <DetailRow label="Trip Type" value={trip?.short} />
+            <DetailRow label="Vehicle" value={vehicle.name} />
+            <DetailRow label="Travel Date" value={fmtDate(search.date)} />
+            <DetailRow label="Pickup Time" value={fmtTime(search.time)} />
             {search.type === "roundtrip" && <DetailRow label="Return" value={fmtDate(search.returnDate)} />}
             {search.type === "roundtrip" && search.returnTime && (
               <DetailRow label="Drop Time" value={fmtTime(search.returnTime)} />
             )}
-            <DetailRow label="Trip Type" value={trip?.short} />
-            <DetailRow label="Vehicle" value={vehicle.name} />
-            {pkg && <DetailRow label="Package" value={pkg.label} />}
-            {route && <DetailRow label="Distance" value={`${route.distanceKm} km`} />}
-            {route && <DetailRow label="Duration" value={fmtDuration(route.durationMin)} />}
+            {pkg && <DetailRow label="Rental Duration" value={`${pkg.hours} hours · ${pkg.kms} km`} />}
+            {route && (
+              <DetailRow
+                label={search.type === "roundtrip" ? "Distance (up & down)" : "Distance"}
+                value={`${distanceText({ distanceKm: route.distanceKm, pricing: quote.pricing })}${route.estimated ? " (approx.)" : ""}`}
+              />
+            )}
+            {route && <DetailRow label="Travel Time" value={fmtDuration(route.durationMin)} />}
             {search.type === "roundtrip" && <DetailRow label="Days" value={String(days)} />}
           </div>
 
@@ -354,49 +338,23 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
             </div>
           </div>
 
-          {/* Inclusions / Exclusions */}
-          <div className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl shadow-xl shadow-black/5 overflow-hidden">
-            <div className="grid grid-cols-2 border-b border-zinc-100 dark:border-white/5">
-              {["inclusions", "exclusions"].map((t) => (
-                <button
-                  key={t} type="button" onClick={() => setTab(t)}
-                  className={`py-3.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                    tab === t
-                      ? "text-gold border-b-2 border-gold -mb-px"
-                      : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <ul
-              className={`m-4 p-5 space-y-3 rounded-xl border ${
-                tab === "inclusions"
-                  ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10"
-                  : "border-red-500/30 bg-red-500/5 dark:bg-red-500/10"
-              }`}
-            >
-              {(tab === "inclusions" ? quote.included : quote.excluded).map((line) => (
-                <li key={line} className="flex items-start gap-3 text-sm font-medium text-zinc-800 dark:text-zinc-100">
-                  {tab === "inclusions" ? (
-                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  ) : (
-                    <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                  )}
-                  {line}
-                </li>
-              ))}
-            </ul>
+          {/* Fare summary — the server's itemised breakdown */}
+          <div className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-xl shadow-black/5">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white mb-3">
+              <Receipt className="w-4 h-4 text-gold" /> Fare Summary
+            </h2>
+            <FareBreakdown pricing={quote.pricing} />
           </div>
 
-          {/* Amount */}
+          {/* Inclusions / Exclusions — both visible, nothing hidden behind a tab */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <IncludeList kind="included" lines={quote.included} />
+            <IncludeList kind="excluded" lines={quote.excluded} />
+          </div>
+
+          {/* Terms */}
           <div className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-xl shadow-black/5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm italic text-zinc-500 dark:text-zinc-400">Amount payable</p>
-              <p className="text-xl font-bold text-gold text-glow-gold">₹ {formatINR(fare)}</p>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
               <Link to="/refund" className="text-gold hover:underline">Cancellation charges &amp; other details</Link>
             </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
@@ -432,7 +390,7 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
             <div className="space-y-3">
               <PayOption
                 checked={plan === "advance"} onChange={() => setPlan("advance")} icon={Wallet}
-                title={<>Pay <strong>₹ {formatINR(advance)}</strong> (20%) now</>}
+                title={<>Pay <strong>₹ {formatINR(advance)}</strong> ({advancePct}%) now</>}
                 sub={`Pay the remaining ₹ ${formatINR(balance)} to the driver`}
               />
               <PayOption
@@ -502,6 +460,31 @@ function PayOption({ checked, onChange, icon: Icon, title, sub }) {
         <span className="block text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{sub}</span>
       </span>
     </label>
+  );
+}
+
+function IncludeList({ kind, lines = [] }) {
+  if (!lines.length) return null;
+  const inc = kind === "included";
+  const Icon = inc ? Check : X;
+  return (
+    <div
+      className={`rounded-2xl border p-5 ${
+        inc ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10" : "border-red-500/30 bg-red-500/5 dark:bg-red-500/10"
+      }`}
+    >
+      <p className={`flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider mb-3 ${inc ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+        <Icon className="w-4 h-4" /> {inc ? "Included" : "Excluded"}
+      </p>
+      <ul className="space-y-2">
+        {lines.map((line) => (
+          <li key={line} className="flex items-start gap-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-100 leading-snug">
+            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${inc ? "text-emerald-500" : "text-red-500"}`} />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

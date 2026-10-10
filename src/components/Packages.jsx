@@ -228,7 +228,7 @@ export default function Packages({ onBookNowClick }) {
                 <div className="pt-4 border-t border-zinc-100 dark:border-white/5 space-y-3">
                   <div className="flex items-baseline justify-between">
                     <span className="text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold">Rate Per Person</span>
-                    <span className="text-sm font-serif font-bold text-gold text-glow-gold">₹{pkg.price}</span>
+                    <span className="text-sm font-serif font-bold text-gold text-glow-gold">₹{pkg.price} <span className="text-[10px] font-sans font-medium text-zinc-400 dark:text-zinc-500">+ 5% GST</span></span>
                   </div>
 
                   <button
@@ -289,7 +289,7 @@ export default function Packages({ onBookNowClick }) {
                   <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
                     <div className="text-left md:text-right">
                       <span className="text-[10px] text-zinc-400 uppercase tracking-widest block">Seat Price</span>
-                      <span className="text-base font-serif font-bold text-gold text-glow-gold">₹{tour.price}</span>
+                      <span className="text-base font-serif font-bold text-gold text-glow-gold">₹{tour.price} <span className="text-[10px] font-sans font-medium text-zinc-400 dark:text-zinc-500">+ 5% GST</span></span>
                     </div>
 
                     <div className="flex items-center gap-3">

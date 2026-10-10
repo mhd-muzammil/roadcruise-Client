@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
-  BadgeCheck, ShieldCheck, Timer, Check, X, Car, Users, Route, Pencil, ChevronDown, MapPin, CircleDot,
+  BadgeCheck, ShieldCheck, Timer, Check, X, Car, Users, Route, Pencil, ChevronDown,
 } from "lucide-react";
 import TripPlanner from "../components/booking/TripPlanner";
-import { getVehicles, getDrivingRoute, mediaUrl } from "../utils/api";
+import { RouteTimeline } from "../components/booking/FareBreakdown";
+import { getVehicles, quoteTrip, mediaUrl } from "../utils/api";
 import {
-  decodeSearch, quoteForVehicle, tripDays, tripTypeByKey, hourlyPackageByKey,
+  decodeSearch, tripFromSearch, tripTypeByKey, hourlyPackageByKey,
   formatINR, fmtDate, fmtTime, fmtDuration,
 } from "../utils/fare";
 import innovaCrystaImg from "../assets/innova-crysta.webp";
@@ -30,7 +31,7 @@ export default function BookResults() {
   const search = useMemo(() => decodeSearch(params), [params]);
 
   const [vehicles, setVehicles] = useState(null); // null = loading
-  const [route, setRoute] = useState(null); // { distanceKm, durationMin, estimated }
+  const [quote, setQuote] = useState(null); // server quote: { route, days, gstRate, advanceRate, quotes }
   const [error, setError] = useState("");
   const [editOpen, setEditOpen] = useState(false); // mobile "modify search"
 
@@ -43,26 +44,17 @@ export default function BookResults() {
     if (!search) return;
     let active = true;
     setVehicles(null);
-    setRoute(null);
+    setQuote(null);
     setError("");
     setEditOpen(false);
 
-    const jobs = [getVehicles()];
-    if (search.type !== "hourly") {
-      jobs.push(
-        getDrivingRoute({
-          fromLat: search.pickup.lat,
-          fromLon: search.pickup.lon,
-          toLat: search.drop.lat,
-          toLon: search.drop.lon,
-        })
-      );
-    }
-    Promise.all(jobs)
-      .then(([v, r]) => {
+    // Prices come from the server (same code that prices the booking); the
+    // vehicle list supplies names, photos and seats.
+    Promise.all([getVehicles(), quoteTrip(tripFromSearch(search))])
+      .then(([v, q]) => {
         if (!active) return;
         setVehicles(Array.isArray(v) ? v : []);
-        if (r) setRoute(r);
+        setQuote(q);
       })
       .catch((e) => active && setError(e.message || "Could not load fares. Please try again."));
     return () => {
@@ -72,29 +64,27 @@ export default function BookResults() {
 
   if (!search) return null;
 
-  const days = search.type === "roundtrip" ? tripDays(search.date, search.returnDate) : 1;
   const pkg = search.type === "hourly" ? hourlyPackageByKey(search.pkg) : null;
-  const quoteCtx = { type: search.type, distanceKm: route?.distanceKm, days, pkg: search.pkg };
-  const needsRoute = search.type !== "hourly";
-  const ready = vehicles !== null && (!needsRoute || route !== null);
+  const route = quote?.route || null;
+  const days = quote?.days || 1;
+  const stops = search.stops || [];
+  const ready = vehicles !== null && quote !== null;
 
+  // Every configured vehicle that can serve this trip type is bookable.
+  const byId = new Map((vehicles || []).map((v) => [v.id, v]));
   const cards = ready
-    ? vehicles
-        .map((v) => ({ vehicle: v, quote: quoteForVehicle(v, quoteCtx) }))
-        .filter((c) => c.quote)
-        .sort((a, b) => {
-          const availA = a.vehicle.available !== false ? 0 : 1;
-          const availB = b.vehicle.available !== false ? 0 : 1;
-          return availA - availB || a.quote.fare - b.quote.fare;
-        })
+    ? quote.quotes
+        .filter((q) => byId.has(q.vehicleId))
+        .map((q) => ({ vehicle: byId.get(q.vehicleId), quote: q }))
+        .sort((a, b) => a.quote.pricing.total - b.quote.pricing.total)
     : [];
 
-  const selectCab = ({ vehicle, quote }) => {
-    if (vehicle.available === false) return;
+  const selectCab = ({ vehicle, quote: vq }) => {
     const payload = {
       search,
       route,
       days,
+      advanceRate: quote.advanceRate,
       vehicle: {
         id: vehicle.id,
         name: vehicle.name,
@@ -103,7 +93,7 @@ export default function BookResults() {
         outstationRate: vehicle.outstationRate,
         image: vehicleImage(vehicle),
       },
-      quote,
+      quote: vq,
       savedAt: Date.now(),
     };
     sessionStorage.setItem("rc_checkout", JSON.stringify(payload));
@@ -140,6 +130,7 @@ export default function BookResults() {
                 <span className="block text-sm font-semibold text-zinc-900 dark:text-white truncate">
                   {search.pickup.name || search.pickup.label}
                   {search.drop ? ` → ${search.drop.name || search.drop.label}` : ` · ${pkg?.label}`}
+                  {stops.length > 0 && ` · ${stops.length} stop${stops.length > 1 ? "s" : ""}`}
                 </span>
                 <span className="block text-xs text-zinc-500 mt-0.5">
                   {fmtDate(search.date)} · {fmtTime(search.time)}
@@ -157,18 +148,7 @@ export default function BookResults() {
                 <span className="block text-[10px] uppercase tracking-wider text-gold font-bold mb-3">
                   Your Trip
                 </span>
-                <div className="space-y-2.5 text-sm">
-                  <p className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
-                    <CircleDot className="w-4 h-4 text-gold shrink-0 mt-0.5" />
-                    <span className="truncate font-medium">{search.pickup.label}</span>
-                  </p>
-                  {search.drop && (
-                    <p className="flex items-start gap-2.5 text-zinc-800 dark:text-zinc-200">
-                      <MapPin className="w-4 h-4 text-gold shrink-0 mt-0.5" />
-                      <span className="truncate font-medium">{search.drop.label}</span>
-                    </p>
-                  )}
-                </div>
+                <RouteTimeline pickup={search.pickup.label} stops={stops} drop={search.drop?.label} />
               </div>
               <TripPlanner key={params.toString()} variant="panel" initial={search} />
             </div>
@@ -190,7 +170,12 @@ export default function BookResults() {
             ) : route ? (
               <p className="text-sm md:text-base font-semibold text-zinc-800 dark:text-zinc-200">
                 <Route className="w-4 h-4 inline-block mr-2 text-gold -mt-0.5" />
-                Distance — {route.distanceKm} km · Travel time — {fmtDuration(route.durationMin)}
+                {search.type === "roundtrip" ? (
+                  <>Round trip — {formatINR(route.distanceKm)} km up + {formatINR(route.distanceKm)} km down = <span className="text-gold">{formatINR(route.distanceKm * 2)} km</span></>
+                ) : (
+                  <>Distance — {route.distanceKm} km</>
+                )}
+                {stops.length > 0 && ` via ${stops.length} stop${stops.length > 1 ? "s" : ""}`} · Travel time — {fmtDuration(route.durationMin)}{search.type === "roundtrip" && " each way"}
                 <span className="block md:inline md:ml-2 text-xs font-normal text-zinc-500">
                   {route.estimated ? "Estimated · " : ""}Actual travel distance and time may vary
                 </span>
@@ -252,8 +237,8 @@ export default function BookResults() {
 
           {ready && cards.length > 0 && (
             <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-6">
-              Fares are indicative and inclusive of applicable charges unless listed under exclusions.
-              The final fare is confirmed with your booking.
+              Fares include {quote.gstRate}% GST and the charges listed under inclusions; anything listed
+              under exclusions is payable separately.
             </p>
           )}
         </div>
@@ -264,16 +249,14 @@ export default function BookResults() {
 
 function CabCard({ card, onSelect }) {
   const { vehicle, quote } = card;
-  const unavailable = vehicle.available === false;
+  const { pricing } = quote;
   // Remote seed images can 404/be hotlink-blocked — fall back to the icon.
   const [imgFailed, setImgFailed] = useState(false);
   const img = !imgFailed && vehicleImage(vehicle);
 
   return (
     <div
-      className={`bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl shadow-black/5 transition-all ${
-        unavailable ? "opacity-55" : "hover:border-gold/40 hover:shadow-gold/5"
-      }`}
+      className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl shadow-black/5 transition-all hover:border-gold/40 hover:shadow-gold/5"
     >
       <div className="grid md:grid-cols-[1fr_auto] items-stretch">
         <div className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 min-w-0">
@@ -299,11 +282,6 @@ function CabCard({ card, onSelect }) {
               {vehicle.seats && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-white/5 rounded-full px-2.5 py-0.5">
                   <Users className="w-3 h-3" /> {vehicle.seats}
-                </span>
-              )}
-              {unavailable && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-red-500 bg-red-500/10 rounded-full px-2.5 py-0.5">
-                  Currently unavailable
                 </span>
               )}
             </div>
@@ -342,22 +320,17 @@ function CabCard({ card, onSelect }) {
         {/* Price + CTA */}
         <div className="md:w-52 md:border-l border-t md:border-t-0 border-zinc-100 dark:border-white/5 p-5 md:p-6 flex md:flex-col items-center justify-between md:justify-center gap-3 text-center">
           <div>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-white">
-              ₹ {formatINR(quote.fare)}
+            <p className="text-2xl font-bold text-zinc-900 dark:text-white tabular-nums">
+              ₹ {formatINR(pricing.total)}
             </p>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-500 mt-0.5 leading-snug">
-              Inclusive of GST &amp; applicable charges
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-snug tabular-nums">
+              ₹ {formatINR(pricing.subtotal)} + {pricing.gstRate}% GST
             </p>
           </div>
           <button
             type="button"
             onClick={onSelect}
-            disabled={unavailable}
-            className={`px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-              unavailable
-                ? "bg-zinc-200 dark:bg-white/10 text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
-                : "bg-gold hover:bg-gold-hover text-zinc-950 shadow-md shadow-gold/15 hover:shadow-lg active:scale-[0.98] cursor-pointer"
-            }`}
+            className="px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all bg-gold hover:bg-gold-hover text-zinc-950 shadow-md shadow-gold/15 hover:shadow-lg active:scale-[0.98] cursor-pointer"
           >
             Select Cab
           </button>

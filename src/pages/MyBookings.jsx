@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
   CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
-  Pencil, Download, X, BellRing,
+  Pencil, Download, X, BellRing, Route, Timer, ChevronDown,
 } from "lucide-react";
 import { fetchBookings, cancelBooking, modifyBooking, downloadBookingInvoice, setMarketingConsent } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
+import FareBreakdown, { RouteTimeline } from "../components/booking/FareBreakdown";
+import { bookingPricing, distanceText, formatINR, fmtDate, fmtTime } from "../utils/fare";
 
 // Map a booking status to display metadata.
 const statusMeta = (status) => {
@@ -28,6 +30,68 @@ const toneCls = {
   amber: "bg-amber-500/10 text-amber-500 border-amber-500/30",
   red: "bg-red-500/10 text-red-500 border-red-500/30",
 };
+
+const stopsOf = (b) => (Array.isArray(b.stops) ? b.stops.map((st) => st?.label || st).filter(Boolean) : []);
+
+/**
+ * Expandable full summary: route with stops, trip facts, the itemised fare
+ * (subtotal, GST, total) and the inclusions/exclusions captured at booking.
+ */
+function BookingSummary({ b }) {
+  const included = b.inclusions || [];
+  const excluded = b.exclusions || [];
+  return (
+    <details className="group border-t border-zinc-100 dark:border-white/5">
+      <summary className="flex items-center justify-between gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 hover:text-gold cursor-pointer list-none focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset">
+        Booking summary &amp; fare details
+        <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="px-5 pb-5 grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <RouteTimeline pickup={b.pickup} stops={stopsOf(b)} drop={b.drop} />
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+            {[
+              ["Booking ID", b.id],
+              ["Trip type", b.tripType],
+              ["Travel date", b.toDate && b.toDate !== b.fromDate ? `${fmtDate(b.fromDate)} – ${fmtDate(b.toDate)}` : fmtDate(b.fromDate)],
+              ["Pickup time", b.pickupTime ? fmtTime(b.pickupTime) : ""],
+              ["Vehicle", b.vehicle || b.item],
+              ["Rental duration", b.rental?.hours ? `${b.rental.hours} hours · ${b.rental.kms} km` : ""],
+              ["Distance", distanceText(b)],
+              ["Days", Number(b.days) > 1 ? String(b.days) : ""],
+            ]
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">{k}</dt>
+                  <dd className="text-zinc-800 dark:text-zinc-200 font-medium mt-0.5 break-words">{v}</dd>
+                </div>
+              ))}
+          </dl>
+        </div>
+        <div className="space-y-4">
+          <FareBreakdown pricing={bookingPricing(b)} compact />
+          {(included.length > 0 || excluded.length > 0) && (
+            <div className="grid sm:grid-cols-2 gap-3 text-xs">
+              {included.length > 0 && (
+                <ul className="space-y-1">
+                  <li className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Included</li>
+                  {included.map((l) => <li key={l} className="text-zinc-600 dark:text-zinc-300">✓ {l}</li>)}
+                </ul>
+              )}
+              {excluded.length > 0 && (
+                <ul className="space-y-1">
+                  <li className="font-bold uppercase tracking-wider text-[10px] text-red-600 dark:text-red-400">Excluded</li>
+                  {excluded.map((l) => <li key={l} className="text-zinc-600 dark:text-zinc-300">✕ {l}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </details>
+  );
+}
 
 function Row({ icon: Icon, label, value }) {
   if (!value || value === "—" || value === "") return null;
@@ -525,9 +589,12 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                           ? <Row icon={Car} label="Vehicle" value={b.vehicle} />
                           : <Row icon={Car} label="Vehicle" value={b.vehicle || b.item} />}
                         <Row icon={MapPin} label="Pickup" value={b.pickup} />
+                        {stopsOf(b).length > 0 && <Row icon={MapPin} label="Stops" value={stopsOf(b).join(" → ")} />}
                         {b.category !== "package" && <Row icon={MapPin} label="Drop" value={b.drop} />}
                         <Row icon={Users} label="Passengers" value={b.passengers} />
-                        <Row icon={Clock} label="Pickup time" value={b.pickupTime} />
+                        <Row icon={Clock} label="Pickup time" value={b.pickupTime ? fmtTime(b.pickupTime) : ""} />
+                        {b.rental?.hours && <Row icon={Timer} label="Duration" value={`${b.rental.hours} hours · ${b.rental.kms} km`} />}
+                        {b.distanceKm && <Row icon={Route} label="Distance" value={distanceText(b)} />}
                       </div>
                     </div>
                   </div>
@@ -536,12 +603,13 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                   <div className="flex flex-row md:flex-col items-end justify-between md:justify-start gap-3 md:text-right md:min-w-[140px] border-t md:border-t-0 md:border-l border-zinc-100 dark:border-white/5 pt-4 md:pt-0 md:pl-5">
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-zinc-400">{meta.canPay ? "Amount Due" : "Fare"}</p>
-                      <p className="text-lg font-serif font-bold text-gold">₹{Number(b.fare || 0).toLocaleString("en-IN")}</p>
-                      {/* Advance-plan bookings: 20% collected online, rest to the driver. */}
+                      <p className="text-lg font-serif font-bold text-gold">₹{formatINR(b.fare)}</p>
+                      {b.pricing && <p className="text-[10px] text-zinc-400">incl. {b.pricing.gstRate}% GST</p>}
+                      {/* Advance-plan bookings: deposit collected online, rest to the driver. */}
                       {Number(b.advanceAmount) > 0 && (
                         <p className="text-[10px] text-zinc-400 mt-0.5">
-                          ₹{Number(b.advanceAmount).toLocaleString("en-IN")} advance
-                          {" · "}₹{(Number(b.fare || 0) - Number(b.advanceAmount)).toLocaleString("en-IN")} to driver
+                          ₹{formatINR(b.advanceAmount)} advance
+                          {" · "}₹{formatINR(Math.round((Number(b.fare || 0) - Number(b.advanceAmount)) * 100) / 100)} to driver
                         </p>
                       )}
                       <p className="text-[10px] text-zinc-400 mt-0.5">{b.paymentMethod}</p>
@@ -591,6 +659,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                     </div>
                   </div>
                 </div>
+                <BookingSummary b={b} />
               </div>
             );
           })
