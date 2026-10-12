@@ -3,7 +3,8 @@ import { MapPin, Loader2, X } from "lucide-react";
 import { searchPlaces } from "../../utils/api";
 
 /**
- * Location input with live suggestions (server-proxied OpenStreetMap search).
+ * Location input with live suggestions (server-proxied place search — Ola Maps,
+ * falling back to OpenStreetMap; see places.controller.js).
  * A "place" is only considered chosen when the user picks a suggestion — free
  * text has no coordinates, so the fare engine can't quote it.
  *
@@ -172,8 +173,11 @@ export default function PlaceAutocomplete({ value, onSelect, placeholder = "Ente
               </button>
             </li>
           ))}
+          {/* Attribution follows the dataset that actually answered — the
+              server falls back from Ola Maps to OpenStreetMap, and both
+              providers' terms require crediting the one in use. */}
           <li className="px-4 py-1.5 text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-white/5">
-            Search by OpenStreetMap
+            Search by {results[0]?.source === "olamaps" ? "Ola Maps" : "OpenStreetMap"}
           </li>
         </ul>
       )}
