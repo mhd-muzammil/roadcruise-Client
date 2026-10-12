@@ -37,6 +37,7 @@ const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const BookResults = lazy(() => import("./pages/BookResults"));
 const BookCheckout = lazy(() => import("./pages/BookCheckout"));
 const BecomeOperator = lazy(() => import("./pages/BecomeOperator"));
+const Business = lazy(() => import("./pages/Business"));
 
 export default function App() {
   // Router must wrap the tree so AppContent can use navigation hooks.
@@ -118,6 +119,7 @@ function AppContent() {
           <Route path="/vehicles" element={<Fleet onBookNowClick={openBooking} />} />
           <Route path="/tours-travels" element={<ToursTravels onBookNowClick={openBooking} />} />
           <Route path="/become-operator" element={<BecomeOperator />} />
+          <Route path="/business" element={<Business />} />
           <Route path="/book/results" element={<BookResults />} />
           <Route
             path="/book/checkout"

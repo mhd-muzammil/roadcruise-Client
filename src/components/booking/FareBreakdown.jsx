@@ -78,3 +78,48 @@ export function RouteTimeline({ pickup, stops = [], drop, className = "" }) {
     </ol>
   );
 }
+
+/**
+ * Post-trip (final invoice) charges recorded when a trip is closed: km summary,
+ * extra-km / extra-charge lines, GST on them, tolls, and the final total
+ * (booked fare + these). Server figures, rendered verbatim.
+ */
+export function PostTripCharges({ closure, bookedTotal, className = "" }) {
+  if (!closure) return null;
+  const km = (n) => `${Number(n || 0).toLocaleString("en-IN")} km`;
+  const row = "flex justify-between gap-4 text-zinc-600 dark:text-zinc-300";
+  return (
+    <div className={`text-sm rounded-xl border border-gold/30 bg-gold/5 p-3 ${className}`}>
+      <p className="text-[10px] uppercase tracking-wider font-bold text-gold mb-2">Post-trip charges</p>
+      <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+        {[["Included", km(closure.includedKm)], ["Actual", km(closure.actualKm)], ["Extra", km(closure.extraKm)]].map(([k, v]) => (
+          <div key={k}>
+            <span className="block text-[10px] uppercase tracking-wider text-zinc-400 font-bold">{k}</span>
+            <span className="font-semibold text-zinc-900 dark:text-white">{v}</span>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-1">
+        {closure.lines.length === 0 && <p className="text-xs text-zinc-500">No extra km or charges — within the booked limits.</p>}
+        {closure.lines.map((l) => (
+          <div key={l.key} className={row}>
+            <span className="min-w-0">{l.label}{l.detail && <span className="block text-[11px] text-zinc-400">{l.detail}</span>}</span>
+            <span className="tabular-nums shrink-0">₹ {formatINR(l.amount)}</span>
+          </div>
+        ))}
+        {closure.gstAmount > 0 && (
+          <div className={row}><span>GST ({closure.gstRate}%) on extras</span><span className="tabular-nums">₹ {formatINR(closure.gstAmount)}</span></div>
+        )}
+        <div className={`${row} pt-1 border-t border-dashed border-zinc-200 dark:border-white/10`}>
+          <span>Post-trip total</span><span className="tabular-nums font-semibold">₹ {formatINR(closure.total)}</span>
+        </div>
+        {bookedTotal != null && (
+          <div className="flex justify-between items-baseline pt-1.5 border-t border-zinc-200 dark:border-white/10">
+            <span className="font-bold text-zinc-900 dark:text-white">Final total</span>
+            <span className="font-bold text-gold tabular-nums">₹ {formatINR(Math.round((Number(bookedTotal) + Number(closure.total || 0)) * 100) / 100)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

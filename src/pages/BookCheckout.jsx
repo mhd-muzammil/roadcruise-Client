@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Car, Check, X, ShieldCheck, Lock, CheckCircle,
-  Loader2, Users, Wallet, CreditCard, AlertCircle, Receipt,
+  Loader2, Users, Wallet, CreditCard, AlertCircle, Receipt, Pencil,
 } from "lucide-react";
 import { createBooking } from "../utils/api";
 import { payWithCheckout } from "../utils/payment";
@@ -53,6 +53,9 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
   const [apiError, setApiError] = useState("");
   const [notice, setNotice] = useState("");
   const [result, setResult] = useState(null); // { booking }
+  // Review step: the customer must see the trip + fare split-up and confirm
+  // before anything is booked or charged.
+  const [confirming, setConfirming] = useState(false);
 
   // No selection (deep link / expired session storage) -> back to the planner.
   useEffect(() => {
@@ -137,6 +140,13 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
       return;
     }
 
+    setConfirming(true);
+  };
+
+  // Runs only from the confirmation dialog's "Confirm" button.
+  const placeBooking = async () => {
+    setConfirming(false);
+    setApiError("");
     setStatus("paying");
     setStatusMsg(plan === "arrival" ? "Reserving your booking…" : "Creating your booking…");
 
@@ -433,7 +443,138 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
           </form>
         </div>
       </div>
+
+      {confirming && (
+        <ConfirmTripDialog
+          onCancel={() => setConfirming(false)}
+          onConfirm={placeBooking}
+          traveller={form}
+          search={search}
+          stops={stops}
+          trip={trip}
+          pkg={pkg}
+          days={days}
+          route={route}
+          vehicle={vehicle}
+          quote={quote}
+          plan={plan}
+          payNow={payNow}
+          balance={plan === "advance" ? balance : plan === "arrival" ? fare : 0}
+          advancePct={advancePct}
+        />
+      )}
     </section>
+  );
+}
+
+/**
+ * "Please confirm your trip" — every trip detail and the server's fare
+ * split-up, shown before the booking is created. Nothing is booked or charged
+ * until the customer presses Confirm.
+ */
+function ConfirmTripDialog({
+  onCancel, onConfirm, traveller, search, stops, trip, pkg, days, route, vehicle, quote,
+  plan, payNow, balance, advancePct,
+}) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onCancel();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  const planLabel =
+    plan === "advance" ? `Pay ${advancePct}% advance online now`
+      : plan === "full" ? "Pay 100% online now"
+        : "Pay on arrival";
+  const confirmLabel = plan === "arrival" ? "Confirm & Reserve" : `Confirm & Pay ₹ ${formatINR(payNow)}`;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="confirm-trip-title">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-2xl max-h-full overflow-y-auto rounded-2xl bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 shadow-2xl animate-fade-in">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-white/5 bg-white dark:bg-bg-card">
+          <div>
+            <h2 id="confirm-trip-title" className="text-lg font-serif font-bold text-zinc-900 dark:text-white">Confirm your trip</h2>
+            <p className="text-[11px] text-zinc-500">Please check the details and fare before booking.</p>
+          </div>
+          <button onClick={onCancel} aria-label="Close" className="p-2 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 grid md:grid-cols-2 gap-6">
+          {/* Trip details */}
+          <div className="space-y-5">
+            <RouteTimeline pickup={search.pickup.label} stops={stops} drop={search.drop?.label} />
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <DetailRow label="Trip Type" value={trip?.short} />
+              <DetailRow label="Vehicle" value={vehicle.name} />
+              <DetailRow label="Travel Date" value={fmtDate(search.date)} />
+              <DetailRow label="Pickup Time" value={fmtTime(search.time)} />
+              {search.type === "roundtrip" && <DetailRow label="Return" value={fmtDate(search.returnDate)} />}
+              {search.type === "roundtrip" && search.returnTime && <DetailRow label="Drop Time" value={fmtTime(search.returnTime)} />}
+              {pkg && <DetailRow label="Rental Duration" value={`${pkg.hours} hours · ${pkg.kms} km`} />}
+              {route && (
+                <DetailRow
+                  label={search.type === "roundtrip" ? "Distance (up & down)" : "Distance"}
+                  value={`${distanceText({ distanceKm: route.distanceKm, pricing: quote.pricing })}${route.estimated ? " (approx.)" : ""}`}
+                />
+              )}
+              {search.type === "roundtrip" && <DetailRow label="Days" value={String(days)} />}
+              <DetailRow label="Traveller" value={traveller.name} />
+              <DetailRow label="Phone" value={traveller.phone} />
+            </div>
+            {traveller.notes.trim() && <DetailRow label="Additional request" value={traveller.notes.trim()} />}
+          </div>
+
+          {/* Fare split-up */}
+          <div className="space-y-4">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
+              <Receipt className="w-4 h-4 text-gold" /> Fare split-up
+            </p>
+            <FareBreakdown pricing={quote.pricing} compact />
+            <div className="rounded-xl bg-gold/10 border border-gold/30 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-zinc-600 dark:text-zinc-300">Payment</span>
+                <span className="font-semibold text-zinc-900 dark:text-white text-right">{planLabel}</span>
+              </div>
+              {payNow > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Pay now</span>
+                  <span className="font-bold text-gold tabular-nums">₹ {formatINR(payNow)}</span>
+                </div>
+              )}
+              {balance > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">{plan === "arrival" ? "Pay on the trip" : "Balance to driver"}</span>
+                  <span className="font-semibold text-zinc-900 dark:text-white tabular-nums">₹ {formatINR(balance)}</span>
+                </div>
+              )}
+            </div>
+            {quote.excluded?.length > 0 && (
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Not included: {quote.excluded.join(" · ")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 dark:border-white/5 bg-white dark:bg-bg-card">
+          <button
+            type="button" onClick={onCancel}
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-3 border border-zinc-300 dark:border-white/15 hover:border-gold/50 text-zinc-700 dark:text-zinc-300 hover:text-gold font-bold rounded-xl text-xs tracking-wider uppercase transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit details
+          </button>
+          <button
+            type="button" onClick={onConfirm} autoFocus
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold hover:bg-gold-hover text-zinc-950 font-bold rounded-xl text-xs tracking-wider uppercase shadow-md shadow-gold/20 transition-all"
+          >
+            <CheckCircle className="w-4 h-4" /> {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

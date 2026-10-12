@@ -1,20 +1,8 @@
 import React from "react";
-import { Compass, Phone, Mail, MapPin, ChevronRight } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Phone, Mail, MapPin, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
-  const location = useLocation();
-
-  // "Ride with Road Cruise" points at the hero trip planner. From another page
-  // a normal navigation lands there (ScrollToTop resets scroll); when already
-  // on the home page, just glide back up to the widget.
-  const handleRideClick = (e) => {
-    if (location.pathname === "/") {
-      e.preventDefault();
-      document.getElementById("home")?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <footer id="contact" className="bg-zinc-100 dark:bg-zinc-950 border-t border-zinc-200 dark:border-white/5 py-16 text-xs text-zinc-600 dark:text-zinc-400 transition-colors duration-300">
       {/* Four link sections: Explore | Company | Partner With Us | Get in Touch */}
@@ -60,17 +48,16 @@ export default function Footer() {
             </li>
             <li>
               <Link
-                to="/"
-                onClick={handleRideClick}
+                to="/business"
                 className="group inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-white hover:text-gold dark:hover:text-gold transition-colors border-b border-gold/50 pb-0.5"
               >
-                Ride with Road Cruise
+                Business with Road Cruise
                 <ChevronRight className="w-4 h-4 text-gold group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </li>
           </ul>
           <p className="leading-relaxed text-zinc-500 dark:text-zinc-500 font-light pr-4">
-            Attach your cab or fleet and grow with steady bookings across South India.
+            Attach your cab or fleet, or set up corporate travel for your company — send us an enquiry.
           </p>
         </div>
 
@@ -106,12 +93,17 @@ export default function Footer() {
       {/* Bottom bar: brand + copyright + socials (Taxida-style logo row) */}
       <div className="max-w-7xl mx-auto px-6 border-t border-zinc-200 dark:border-white/5 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-2">
-          <div className="flex items-center gap-2">
-            <Compass className="w-5 h-5 text-gold" />
-            <span className="font-serif text-lg font-bold tracking-widest text-zinc-900 dark:text-white">
-              ROAD CRUISE
-            </span>
-          </div>
+          {/* Same brand lockup as the header — it already carries the wordmark. */}
+          <Link to="/" aria-label="Road Cruise — home">
+            <img
+              src="/logo-nav.webp"
+              alt="Road Cruise — feel like cruise"
+              width="380"
+              height="165"
+              loading="lazy"
+              className="h-12 w-auto object-contain rounded-lg shadow-sm"
+            />
+          </Link>
           <div className="text-[10px] uppercase text-gold font-bold tracking-widest">
             ISO 9001:2015 Certified
           </div>

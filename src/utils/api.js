@@ -294,7 +294,7 @@ export const cancelBooking = async (id) => {
 
 /**
  * Modify a booking's trip details (owner only; staff can modify any). Editable
- * fields: fromDate, toDate, pickup, drop, passengers, pickupTime, notes — the
+ * fields: fromDate, toDate, pickup, stops (labels), drop, passengers, pickupTime, notes — the
  * fare/vehicle/status never change here. The server notifies the customer and
  * the business inbox. Returns the updated booking.
  */
@@ -313,10 +313,26 @@ export const modifyBooking = async (id, changes) => {
  * (print-friendly; "Print → Save as PDF" in the browser gives a PDF). Returns
  * a Blob the caller turns into a download link.
  */
-export const downloadBookingInvoice = async (id) => {
-  const res = await fetch(`${BASE_URL}/bookings/${id}/invoice`, { headers: authHeaders() });
+export const downloadBookingInvoice = async (id, type = "pre") => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/invoice?type=${type}`, { headers: authHeaders() });
   if (!res.ok) return throwError(res, "Could not download the invoice");
   return res.blob();
+};
+
+/**
+ * Admin: close a finished trip with its actual km. Extra km beyond what the
+ * fare included (+ any extra charges / tolls) is billed on the final
+ * (post-trip) invoice and the booking becomes "Completed".
+ * data: { actualKm, includedKm?, extraKmRate?, otherAmount?, otherLabel?, tolls? }
+ */
+export const closeTrip = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/close`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return throwError(res, "Could not close the trip");
+  return res.json();
 };
 
 // --- Contact / enquiry (public — no auth) ---

@@ -4,7 +4,8 @@ import {
   ArrowRightLeft, ChevronDown, Search, Plane, ArrowRight, Repeat, Clock, Plus, X, ChevronUp,
 } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
-import { TRIP_TYPES, HOURLY_PACKAGES, STOP_TRIP_TYPES, MAX_STOPS, encodeSearch } from "../../utils/fare";
+import TimePicker12 from "../common/TimePicker12";
+import { TRIP_TYPES, HOURLY_PACKAGES, STOP_TRIP_TYPES, MAX_STOPS, encodeSearch, nowTime } from "../../utils/fare";
 
 const TRIP_ICONS = { airport: Plane, oneway: ArrowRight, roundtrip: Repeat, hourly: Clock };
 
@@ -32,6 +33,8 @@ function PlannerField({ label, error, children, className = "" }) {
     </div>
   );
 }
+
+const timeCls = "text-sm font-medium text-zinc-900 dark:text-white";
 
 const nativeCls =
   "w-full bg-transparent border-0 p-0 focus:outline-none focus:ring-0 text-sm font-medium text-zinc-900 dark:text-white cursor-pointer";
@@ -65,7 +68,8 @@ export default function TripPlanner({
   // stable id so React doesn't mix up inputs when one is removed/reordered.
   const [stops, setStops] = useState(() => (initial?.stops || []).map((p) => newStop(p)));
   const [date, setDate] = useState(initial?.date || "");
-  const [time, setTime] = useState(initial?.time || "");
+  // Defaults to the current time (12-hour picker), so it's never blank.
+  const [time, setTime] = useState(initial?.time || nowTime());
   const [returnDate, setReturnDate] = useState(initial?.returnDate || "");
   const [returnTime, setReturnTime] = useState(initial?.returnTime || "22:30");
   const [pkg, setPkg] = useState(initial?.pkg || "8h80");
@@ -198,8 +202,7 @@ export default function TripPlanner({
           </PlannerField>
           <PlannerField label="Pickup-Time" error={errors.time}
             className="rounded-xl border border-zinc-200 dark:border-white/10">
-            <input type="time" value={time}
-              onChange={(e) => { setTime(e.target.value); clearError("time"); }} className={nativeCls} />
+            <TimePicker12 value={time} onChange={(v) => { setTime(v); clearError("time"); }} className={timeCls} ariaLabel="Pickup time" />
           </PlannerField>
         </div>
 
@@ -211,7 +214,7 @@ export default function TripPlanner({
                 onChange={(e) => { setReturnDate(e.target.value); clearError("returnDate"); }} className={nativeCls} />
             </PlannerField>
             <PlannerField label="Drop Time" className="rounded-xl border border-zinc-200 dark:border-white/10">
-              <input type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={nativeCls} />
+              <TimePicker12 value={returnTime} onChange={setReturnTime} className={timeCls} ariaLabel="Drop time" />
             </PlannerField>
           </div>
         )}
@@ -294,8 +297,7 @@ export default function TripPlanner({
                 onChange={(e) => { setDate(e.target.value); clearError("date"); }} className={nativeCls} />
             </PlannerField>
             <PlannerField label="Pickup-Time" error={errors.time} className={`md:col-span-2 ${divider}`}>
-              <input type="time" value={time}
-                onChange={(e) => { setTime(e.target.value); clearError("time"); }} className={nativeCls} />
+              <TimePicker12 value={time} onChange={(v) => { setTime(v); clearError("time"); }} className={timeCls} ariaLabel="Pickup time" />
             </PlannerField>
             <PlannerField label="Select Package" className={`md:col-span-2 ${divider} relative`}>
               <select value={pkg} onChange={(e) => setPkg(e.target.value)} className={`${nativeCls} appearance-none pr-5`}>
@@ -332,11 +334,10 @@ export default function TripPlanner({
                   onChange={(e) => { setReturnDate(e.target.value); clearError("returnDate"); }} className={nativeCls} />
               </PlannerField>
               <PlannerField label="Pickup-Time" error={errors.time} className={`md:col-span-2 ${divider}`}>
-                <input type="time" value={time}
-                  onChange={(e) => { setTime(e.target.value); clearError("time"); }} className={nativeCls} />
+                <TimePicker12 value={time} onChange={(v) => { setTime(v); clearError("time"); }} className={timeCls} ariaLabel="Pickup time" />
               </PlannerField>
               <PlannerField label="Drop Time" className={`md:col-span-2 ${divider} border-l`}>
-                <input type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} className={nativeCls} />
+                <TimePicker12 value={returnTime} onChange={setReturnTime} className={timeCls} ariaLabel="Drop time" />
               </PlannerField>
               <div className="col-span-2 md:col-span-2 p-2.5 flex border-t border-zinc-100 dark:border-white/5 md:border-t-0">
                 <SubmitButton />
@@ -357,8 +358,7 @@ export default function TripPlanner({
                 onChange={(e) => { setDate(e.target.value); clearError("date"); }} className={nativeCls} />
             </PlannerField>
             <PlannerField label="Pickup-Time" error={errors.time} className={`md:col-span-2 ${divider}`}>
-              <input type="time" value={time}
-                onChange={(e) => { setTime(e.target.value); clearError("time"); }} className={nativeCls} />
+              <TimePicker12 value={time} onChange={(v) => { setTime(v); clearError("time"); }} className={timeCls} ariaLabel="Pickup time" />
             </PlannerField>
             <div className="md:col-span-2 p-2.5 flex">
               <SubmitButton />

@@ -178,6 +178,12 @@ export const fmtTime = (t) => {
   return `${hour}:${String(m || 0).padStart(2, "0")} ${ampm}`;
 };
 
+/** Current local time as "HH:mm" — the default pickup time in pickers. */
+export const nowTime = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
 /** "0 hrs 32 min" from minutes, for the distance banner + ride details. */
 export const fmtDuration = (mins) => {
   const m = Math.max(0, Math.round(Number(mins) || 0));

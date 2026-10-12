@@ -3,19 +3,22 @@ import { Link } from "react-router-dom";
 import {
   Calendar, MapPin, Users, Clock, Car, Package as PackageIcon, CreditCard,
   CheckCircle, Loader2, AlertCircle, Lock, RefreshCw, Ticket, XCircle,
-  Pencil, Download, X, BellRing, Route, Timer, ChevronDown,
+  Pencil, Download, X, BellRing, Route, Timer, ChevronDown, Plus, Phone, User, Wallet, Hash,
 } from "lucide-react";
 import { fetchBookings, cancelBooking, modifyBooking, downloadBookingInvoice, setMarketingConsent } from "../utils/api";
 import { payForBooking } from "../utils/payment";
 import useDocumentMeta from "../hooks/useDocumentMeta";
-import FareBreakdown, { RouteTimeline } from "../components/booking/FareBreakdown";
-import { bookingPricing, distanceText, formatINR, fmtDate, fmtTime } from "../utils/fare";
+import FareBreakdown, { RouteTimeline, PostTripCharges } from "../components/booking/FareBreakdown";
+import TimePicker12 from "../components/common/TimePicker12";
+import { bookingPricing, distanceText, formatINR, fmtDate, fmtTime, STOP_TRIP_TYPES, MAX_STOPS } from "../utils/fare";
 
 // Map a booking status to display metadata.
 const statusMeta = (status) => {
   switch (status) {
     case "Approved":
-      return { label: "Confirmed", tone: "emerald", canPay: false };
+      return { label: "Confirmed", tone: "emerald", canPay: false, paid: true };
+    case "Completed":
+      return { label: "Completed", tone: "blue", canPay: false };
     case "Cancelled":
       return { label: "Cancelled", tone: "red", canPay: false };
     case "PendingPayment":
@@ -29,9 +32,61 @@ const toneCls = {
   emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
   amber: "bg-amber-500/10 text-amber-500 border-amber-500/30",
   red: "bg-red-500/10 text-red-500 border-red-500/30",
+  blue: "bg-blue-500/10 text-blue-500 border-blue-500/30",
 };
 
 const stopsOf = (b) => (Array.isArray(b.stops) ? b.stops.map((st) => st?.label || st).filter(Boolean) : []);
+
+// Same rule as the server: outstation trip-planner bookings and classic-form
+// vehicle bookings can have stops; airport, hourly and package ones can't.
+const canHaveStops = (b) =>
+  STOP_TRIP_TYPES.includes(b.tripKind) || (!b.tripKind && b.category !== "package" && !b.packageName);
+
+const bookedTotal = (b) => Number(b.pricing?.total ?? b.fare) || 0;
+const finalTotal = (b) => Math.round((bookedTotal(b) + (Number(b.tripClosure?.total) || 0)) * 100) / 100;
+
+/**
+ * Cab + driver details, filled in by the admin when the trip is assigned.
+ * Until then the customer sees a placeholder so they know it's coming.
+ */
+function CabDriverCard({ b }) {
+  const a = b.assignment;
+  if (b.status === "Cancelled") return null;
+  if (!a) {
+    return (
+      <div className="mx-5 mb-4 px-4 py-3 rounded-xl border border-dashed border-zinc-200 dark:border-white/10 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+        <Car className="w-4 h-4 text-gold flex-shrink-0" />
+        Cab and driver details will appear here once our team assigns your ride.
+      </div>
+    );
+  }
+  const items = [
+    [Hash, "Cab number", a.cabNumber],
+    [Car, "Vehicle type", a.vehicleType || b.vehicle || b.item],
+    [User, "Driver name", a.driverName],
+    [Phone, "Driver phone", a.driverPhone],
+    [Wallet, "Mode of payment", a.paymentMode],
+  ].filter(([, , v]) => v);
+  return (
+    <div className="mx-5 mb-4 p-4 rounded-xl border border-gold/30 bg-gold/5">
+      <p className="text-[10px] uppercase tracking-wider font-bold text-gold mb-3">Your cab &amp; driver</p>
+      <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3 text-xs">
+        {items.map(([Icon, k, v]) => (
+          <div key={k} className="min-w-0">
+            <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
+              <Icon className="w-3 h-3" /> {k}
+            </dt>
+            <dd className="text-zinc-900 dark:text-white font-semibold mt-0.5 break-words">
+              {k === "Driver phone"
+                ? <a href={`tel:${v.replace(/[^\d+]/g, "")}`} className="hover:text-gold underline-offset-2 hover:underline">{v}</a>
+                : v}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
 
 /**
  * Expandable full summary: route with stops, trip facts, the itemised fare
@@ -71,6 +126,7 @@ function BookingSummary({ b }) {
         </div>
         <div className="space-y-4">
           <FareBreakdown pricing={bookingPricing(b)} compact />
+          <PostTripCharges closure={b.tripClosure} bookedTotal={bookedTotal(b)} />
           {(included.length > 0 || excluded.length > 0) && (
             <div className="grid sm:grid-cols-2 gap-3 text-xs">
               {included.length > 0 && (
@@ -119,6 +175,12 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
     pickupTime: booking.pickupTime || "",
     notes: booking.notes || "",
   });
+  const allowStops = canHaveStops(booking);
+  // Stop labels in travel order; blank rows are dropped on save.
+  const [stops, setStops] = useState(() => stopsOf(booking));
+  const setStop = (i) => (e) => setStops((list) => list.map((v, j) => (j === i ? e.target.value : v)));
+  const addStop = () => setStops((list) => (list.length >= MAX_STOPS ? list : [...list, ""]));
+  const removeStop = (i) => setStops((list) => list.filter((_, j) => j !== i));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -136,7 +198,8 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
     }
     setSaving(true);
     try {
-      const updated = await modifyBooking(booking.id, form);
+      const changes = allowStops ? { ...form, stops: stops.map((v) => v.trim()).filter(Boolean) } : form;
+      const updated = await modifyBooking(booking.id, changes);
       onSaved(updated);
     } catch (err) {
       if (err?.status === 401) {
@@ -192,6 +255,28 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
             <input id="edit-pickup" type="text" value={form.pickup} onChange={set("pickup")} placeholder="Pickup address / area" className={fieldCls} />
           </div>
 
+          {allowStops && (
+            <div className="space-y-1.5">
+              <span className={labelCls}>Stops on the way</span>
+              {stops.map((v, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="w-14 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Stop {i + 1}</span>
+                  <input type="text" value={v} onChange={setStop(i)} aria-label={`Stop ${i + 1}`} placeholder="Stop address / area" className={fieldCls} />
+                  <button type="button" onClick={() => removeStop(i)} aria-label={`Remove stop ${i + 1}`}
+                    className="p-2 rounded-full text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {stops.length < MAX_STOPS && (
+                <button type="button" onClick={addStop}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-gold hover:underline">
+                  <Plus className="w-3.5 h-3.5" /> Add stop
+                </button>
+              )}
+            </div>
+          )}
+
           {!isPackage && (
             <div className="space-y-1.5">
               <label htmlFor="edit-drop" className={labelCls}>Drop location</label>
@@ -206,7 +291,10 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
             </div>
             <div className="space-y-1.5">
               <label htmlFor="edit-pickupTime" className={labelCls}>Pickup time</label>
-              <input id="edit-pickupTime" type="time" value={form.pickupTime} onChange={set("pickupTime")} className={fieldCls} />
+              <div className={`${fieldCls} flex items-center`}>
+                <TimePicker12 id="edit-pickupTime" value={form.pickupTime}
+                  onChange={(v) => setForm((prev) => ({ ...prev, pickupTime: v }))} ariaLabel="Pickup time" />
+              </div>
             </div>
           </div>
 
@@ -217,7 +305,7 @@ function EditTripModal({ booking, onClose, onSaved, onSessionExpired }) {
           </div>
 
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-            The fare, vehicle and payment stay as booked. Our team is notified of your changes — for a different vehicle or fare, please cancel and re-book or call us.
+            The fare, vehicle and payment stay as booked. If the new route runs beyond the included km, the extra km is billed on your final invoice after the trip. Our team is notified of your changes.
           </p>
 
           <div className="flex items-center justify-end gap-3 pt-1">
@@ -461,21 +549,22 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
     await load(); // refresh details
   };
 
-  const handleInvoice = async (booking) => {
+  const handleInvoice = async (booking, type = "pre") => {
+    const label = type === "post" ? "Final-Invoice" : "Pre-Invoice";
     setNotice("");
     setError("");
-    setDownloadingId(booking.id);
+    setDownloadingId(`${booking.id}:${type}`);
     try {
-      const blob = await downloadBookingInvoice(booking.id);
+      const blob = await downloadBookingInvoice(booking.id, type);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `RoadCruise-Invoice-${booking.id}.html`;
+      a.download = `RoadCruise-${label}-${booking.id}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      setNotice(`Invoice for ${booking.id} downloaded — open it and use "Print / Save as PDF".`);
+      setNotice(`${label.replace("-", " ")} for ${booking.id} downloaded — open it and use "Print / Save as PDF".`);
     } catch (err) {
       if (err?.status === 401) {
         onSessionExpired?.();
@@ -564,7 +653,8 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
             const isPackage = b.category === "package" || b.packageName;
             const paying = payingId === b.id;
             const cancelling = cancellingId === b.id;
-            const downloading = downloadingId === b.id;
+            const downloadingPre = downloadingId === `${b.id}:pre`;
+            const downloadingPost = downloadingId === `${b.id}:post`;
             const canCancel = b.status !== "Cancelled" && b.status !== "Completed";
             const canEdit = canCancel; // same rule: an active, not-yet-finished trip
             return (
@@ -602,8 +692,11 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                   {/* Right: fare + action */}
                   <div className="flex flex-row md:flex-col items-end justify-between md:justify-start gap-3 md:text-right md:min-w-[140px] border-t md:border-t-0 md:border-l border-zinc-100 dark:border-white/5 pt-4 md:pt-0 md:pl-5">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-zinc-400">{meta.canPay ? "Amount Due" : "Fare"}</p>
-                      <p className="text-lg font-serif font-bold text-gold">₹{formatINR(b.fare)}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-zinc-400">{b.tripClosure ? "Final Fare" : meta.canPay ? "Amount Due" : "Fare"}</p>
+                      <p className="text-lg font-serif font-bold text-gold">₹{formatINR(b.tripClosure ? finalTotal(b) : b.fare)}</p>
+                      {b.tripClosure?.total > 0 && (
+                        <p className="text-[10px] text-zinc-400">incl. ₹{formatINR(b.tripClosure.total)} post-trip charges</p>
+                      )}
                       {b.pricing && <p className="text-[10px] text-zinc-400">incl. {b.pricing.gstRate}% GST</p>}
                       {/* Advance-plan bookings: deposit collected online, rest to the driver. */}
                       {Number(b.advanceAmount) > 0 && (
@@ -624,7 +717,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                           {paying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                           {paying ? "Processing…" : "Pay Now"}
                         </button>
-                      ) : meta.tone === "emerald" ? (
+                      ) : meta.paid ? (
                         <span className="inline-flex items-center gap-1.5 text-emerald-500 text-xs font-bold"><CheckCircle className="w-4 h-4" /> Paid</span>
                       ) : null}
                       {canEdit && (
@@ -638,12 +731,22 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                       )}
                       {b.status !== "Cancelled" && (
                         <button
-                          onClick={() => handleInvoice(b)}
-                          disabled={downloading}
+                          onClick={() => handleInvoice(b, "pre")}
+                          disabled={downloadingPre}
                           className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-gold disabled:opacity-60 transition-colors whitespace-nowrap"
                         >
-                          {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                          {downloading ? "Preparing…" : "Invoice"}
+                          {downloadingPre ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          {downloadingPre ? "Preparing…" : "Pre-invoice"}
+                        </button>
+                      )}
+                      {b.tripClosure && (
+                        <button
+                          onClick={() => handleInvoice(b, "post")}
+                          disabled={downloadingPost}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-gold hover:text-gold-hover disabled:opacity-60 transition-colors whitespace-nowrap"
+                        >
+                          {downloadingPost ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          {downloadingPost ? "Preparing…" : "Final invoice"}
                         </button>
                       )}
                       {canCancel && (
@@ -659,6 +762,7 @@ export default function MyBookings({ currentUser, onAuthClick, onSessionExpired 
                     </div>
                   </div>
                 </div>
+                <CabDriverCard b={b} />
                 <BookingSummary b={b} />
               </div>
             );

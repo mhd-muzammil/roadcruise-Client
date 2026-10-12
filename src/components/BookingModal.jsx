@@ -8,7 +8,8 @@ import {
   VEHICLE_OPTIONS, NO_PREFERENCE, vehicleOptionText, findVehicleByName, findVehicleByValue,
   loadVehicleOptions,
 } from "../data/vehicles";
-import { withGst, formatINR } from "../utils/fare";
+import { withGst, formatINR, fmtTime, nowTime } from "../utils/fare";
+import TimePicker12 from "./common/TimePicker12";
 
 // Dynamically load Razorpay's hosted checkout (only when needed). The hosted
 // widget handles card/UPI/netbanking securely — no raw card data ever touches
@@ -119,7 +120,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
   const [formData, setFormData] = useState({
     name: "", phone: "", pickup: "", drop: "",
     fromDate: "", toDate: "", tripType: "Round-trip",
-    passengers: "", pickupTime: "", vehiclePreference: defaultVehiclePref(mode, selectedItem?.name), notes: "",
+    passengers: "", pickupTime: nowTime(), vehiclePreference: defaultVehiclePref(mode, selectedItem?.name), notes: "",
   });
 
   // The vehicle currently chosen in the dropdown (null for "No preference" or
@@ -159,7 +160,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
       toDate: "",
       tripType: mode === "package" ? "Tour Package" : "Round-trip",
       passengers: "",
-      pickupTime: "",
+      pickupTime: nowTime(),
       vehiclePreference: defaultVehiclePref(mode, selectedItem?.name),
       notes: "",
     });
@@ -578,10 +579,13 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
 
               {/* Pickup time */}
               <Field label="Preferred Pickup Time (Optional)" icon={Clock}>
-                <input
-                  type="time" name="pickupTime" value={formData.pickupTime} onChange={handleInputChange}
-                  className={`${fieldCls(false)} [color-scheme:light] dark:[color-scheme:dark]`}
-                />
+                <div className={`${fieldCls(false)} flex items-center`}>
+                  <TimePicker12
+                    value={formData.pickupTime}
+                    onChange={(v) => handleInputChange({ target: { name: "pickupTime", value: v } })}
+                    ariaLabel="Preferred pickup time"
+                  />
+                </div>
               </Field>
 
               {/* Special Notes */}
@@ -633,7 +637,7 @@ export default function BookingModal({ isOpen, onClose, selectedItem, currentUse
                   <Calendar className="w-3.5 h-3.5 text-gold" />
                   <span>
                     {fmtDate(formData.fromDate)} – {fmtDate(formData.toDate)}
-                    {formData.pickupTime && ` · Pickup at ${formData.pickupTime}`}
+                    {formData.pickupTime && ` · Pickup at ${fmtTime(formData.pickupTime)}`}
                   </span>
                 </p>
               </div>

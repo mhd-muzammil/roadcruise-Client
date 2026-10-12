@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
   Megaphone, Download, Send, Eye, EyeOff, Clock, Package as PackageIcon, Pencil, Search, ChevronDown,
+  UserCheck, Flag,
 } from "lucide-react";
-import FareBreakdown, { RouteTimeline } from "./booking/FareBreakdown";
-import { bookingPricing, distanceText, formatINR } from "../utils/fare";
+import FareBreakdown, { RouteTimeline, PostTripCharges } from "./booking/FareBreakdown";
+import { bookingPricing, distanceText, formatINR, fmtTime } from "../utils/fare";
 import {
-  fetchBookings, updateBooking, deleteBooking,
+  fetchBookings, updateBooking, deleteBooking, closeTrip, downloadBookingInvoice,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
   getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile, consentSummary,
@@ -25,7 +27,8 @@ const TABS = [
 ];
 
 const CATEGORIES = ["Sedans", "SUVs", "Tempo Travellers", "Mini Buses", "Luxury", "Other"];
-const DRIVERS = ["None", "Arjun Singh", "Ramesh Kumar", "Karthik Raja", "Sathish Nair"];
+// How the customer pays the driver / balance — shown on My Bookings.
+const PAYMENT_MODES = ["Cash", "UPI", "Card", "Online (prepaid)", "Bank transfer"];
 
 const inr = (n) => `₹${formatINR(n)}`;
 const inputCls =
@@ -263,6 +266,8 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [sort, setSort] = useState("created");
   const [openId, setOpenId] = useState(null);
+  const [assigning, setAssigning] = useState(null); // booking being assigned a cab/driver
+  const [closing, setClosing] = useState(null);     // booking whose trip is being closed
 
   const exportXlsx = async () => {
     setExporting(true);
@@ -392,7 +397,7 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
                       <td className="p-4 max-w-[200px] break-words">{b.drop || "—"}</td>
                       <td className="p-4 font-mono text-[10px] whitespace-nowrap">
                         {b.fromDate}{b.toDate && b.toDate !== b.fromDate ? ` → ${b.toDate}` : ""}
-                        {b.pickupTime && <span className="block text-zinc-400">{b.pickupTime}</span>}
+                        {b.pickupTime && <span className="block text-zinc-400">{fmtTime(b.pickupTime)}</span>}
                       </td>
                       <td className="p-4 font-mono whitespace-nowrap">
                         <span className="font-bold text-zinc-900 dark:text-white">{inr(b.fare)}</span>
@@ -404,14 +409,23 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${statusCls(b.status)}`}>{b.status}</span>
                         {b.vehicleId && b.vehicleReleased && <span className="block text-[8px] text-zinc-400 mt-1">unit freed</span>}
                       </td>
-                      <td className="p-4">
-                        <select
-                          value={b.driver || "None"}
-                          onChange={(e) => act(() => updateBooking(b.id, { driver: e.target.value }), b.id)}
-                          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-gold text-zinc-800 dark:text-zinc-300 font-medium"
-                        >
-                          {DRIVERS.map((d) => <option key={d} value={d}>{d === "None" ? "Unassigned" : d}</option>)}
-                        </select>
+                      <td className="p-4 max-w-[160px]">
+                        {b.assignment ? (
+                          <>
+                            <p className="font-bold text-zinc-800 dark:text-zinc-200 break-words">{b.assignment.driverName}</p>
+                            <p className="text-[10px] text-zinc-400 font-mono">{b.assignment.cabNumber}</p>
+                          </>
+                        ) : b.driver && b.driver !== "None" ? (
+                          <p className="font-medium break-words">{b.driver}</p>
+                        ) : (
+                          <p className="text-[10px] text-zinc-400 italic">Unassigned</p>
+                        )}
+                        {b.status !== "Cancelled" && (
+                          <button type="button" onClick={() => setAssigning(b)}
+                            className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-gold hover:underline">
+                            <UserCheck className="w-3 h-3" /> {b.assignment ? "Edit" : "Assign"}
+                          </button>
+                        )}
                       </td>
                       <td className="p-4">
                         <div className="flex gap-1 justify-center items-center">
@@ -420,6 +434,12 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
                             <button onClick={() => act(() => updateBooking(b.id, { status: "Approved" }), b.id)}
                               className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded" title="Approve">
                               <Check className="w-4 h-4" />
+                            </button>
+                          )}
+                          {(b.status === "Approved" || b.status === "Completed") && (
+                            <button onClick={() => setClosing(b)}
+                              className="p-1 text-blue-500 hover:bg-blue-500/10 rounded" title={b.tripClosure ? "Edit trip closure (actual km)" : "Close trip (actual km)"}>
+                              <Flag className="w-4 h-4" />
                             </button>
                           )}
                           {b.status !== "Cancelled" && b.status !== "Completed" && (
@@ -449,7 +469,171 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
           </tbody>
         </table>
       </div>
+
+      {assigning && (
+        <AssignDialog
+          booking={assigning}
+          onClose={() => setAssigning(null)}
+          onSaved={async () => { setAssigning(null); await reload(); }}
+        />
+      )}
+      {closing && (
+        <CloseTripDialog
+          booking={closing}
+          onClose={() => setClosing(null)}
+          onSaved={async () => { setClosing(null); await reload(); await reloadVehicles(); }}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * Small modal shell shared by the assign / close-trip dialogs. Portalled to
+ * <body>: the tab wrapper's fade-in animation uses a transform, which would
+ * otherwise trap `position: fixed` inside the bookings table area.
+ */
+function Dialog({ title, subtitle, onClose, busy, children }) {
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={busy ? undefined : onClose} />
+      <div className="relative w-full max-w-md max-h-full overflow-y-auto rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-white/5">
+          <div>
+            <h3 className="text-base font-serif font-bold text-zinc-900 dark:text-white">{title}</h3>
+            {subtitle && <p className="text-[11px] text-zinc-400">{subtitle}</p>}
+          </div>
+          <button onClick={onClose} disabled={busy} aria-label="Close" className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-3">{children}</div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function DialogActions({ busy, error, onClose, onSave, saveLabel, extra }) {
+  return (
+    <>
+      {error && <p className="text-xs text-red-500 bg-red-500/10 border border-red-500/30 rounded-lg p-2">{error}</p>}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div>{extra}</div>
+        <div className="flex gap-2">
+          <button type="button" onClick={onClose} disabled={busy} className="px-4 py-2 text-xs font-bold rounded-lg border border-zinc-200 dark:border-white/10">Cancel</button>
+          <button type="button" onClick={onSave} disabled={busy}
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-gold hover:bg-gold-hover text-zinc-950 flex items-center gap-1.5 disabled:opacity-60">
+            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} {saveLabel}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Assign the cab + driver. Everything here is shown to the customer on My
+ * Bookings (and the driver-assigned email), so it must be what turns up.
+ */
+function AssignDialog({ booking, onClose, onSaved }) {
+  const a = booking.assignment || {};
+  const [form, setForm] = useState({
+    cabNumber: a.cabNumber || "",
+    vehicleType: a.vehicleType || booking.vehicle || booking.item || "",
+    driverName: a.driverName || (booking.driver && booking.driver !== "None" ? booking.driver : ""),
+    driverPhone: a.driverPhone || "",
+    paymentMode: a.paymentMode || (/online/i.test(booking.paymentMethod || "") && !Number(booking.advanceAmount) ? "Online (prepaid)" : "Cash"),
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const save = async (assignment) => {
+    setError("");
+    if (assignment && (!assignment.driverName.trim() || !assignment.cabNumber.trim())) {
+      setError("Cab number and driver name are required.");
+      return;
+    }
+    setBusy(true);
+    try { await updateBooking(booking.id, { assignment }); await onSaved(); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog title="Assign cab & driver" subtitle={`${booking.id} · ${booking.name}`} onClose={onClose} busy={busy}>
+      <div className="grid grid-cols-2 gap-3">
+        <Labeled label="Cab number *"><input value={form.cabNumber} onChange={set("cabNumber")} placeholder="TN 01 AB 1234" className={`${inputCls} uppercase`} /></Labeled>
+        <Labeled label="Type of vehicle"><input value={form.vehicleType} onChange={set("vehicleType")} placeholder="Innova Crysta" className={inputCls} /></Labeled>
+        <Labeled label="Driver name *"><input value={form.driverName} onChange={set("driverName")} className={inputCls} /></Labeled>
+        <Labeled label="Driver phone"><input type="tel" value={form.driverPhone} onChange={set("driverPhone")} placeholder="98765 43210" className={inputCls} /></Labeled>
+      </div>
+      <Labeled label="Mode of payment">
+        <select value={form.paymentMode} onChange={set("paymentMode")} className={inputCls}>
+          {PAYMENT_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+      </Labeled>
+      <p className="text-[10px] text-zinc-400">The customer sees these details on My Bookings and gets a driver-assigned email.</p>
+      <DialogActions
+        busy={busy} error={error} onClose={onClose} onSave={() => save(form)} saveLabel="Save"
+        extra={booking.assignment && (
+          <button type="button" onClick={() => save(null)} disabled={busy} className="text-[11px] font-bold text-red-500 hover:underline">Unassign</button>
+        )}
+      />
+    </Dialog>
+  );
+}
+
+/**
+ * Close a finished trip with the odometer km. Km beyond what the fare
+ * included is billed at the per-km rate on the final (post-trip) invoice.
+ * Blank included-km / rate fields use the booking's own values server-side.
+ */
+function CloseTripDialog({ booking, onClose, onSaved }) {
+  const c = booking.tripClosure;
+  const p = booking.pricing || {};
+  const defaultIncluded = Number(p.billKm) || Number(booking.rental?.kms) || Number(booking.distanceKm) || "";
+  const [form, setForm] = useState({
+    actualKm: c?.actualKm ?? "",
+    includedKm: c?.includedKm ?? defaultIncluded,
+    extraKmRate: c?.extraKmRate ?? (booking.rental?.kms ? "" : p.perKm ?? ""),
+    otherAmount: c?.lines?.find((l) => l.key === "other")?.amount ?? "",
+    otherLabel: c?.lines?.find((l) => l.key === "other")?.label ?? "",
+    tolls: c?.tolls || "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const extraKm = Math.max(0, (Number(form.actualKm) || 0) - (Number(form.includedKm) || 0));
+
+  const save = async () => {
+    setError("");
+    if (!(Number(form.actualKm) > 0)) { setError("Enter the actual km driven."); return; }
+    setBusy(true);
+    try { await closeTrip(booking.id, form); await onSaved(); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog title={c ? "Edit trip closure" : "Close trip"} subtitle={`${booking.id} · booked fare ${inr(booking.fare)}`} onClose={onClose} busy={busy}>
+      <div className="grid grid-cols-2 gap-3">
+        <Labeled label="Actual km driven *"><input type="number" min="0" value={form.actualKm} onChange={set("actualKm")} className={inputCls} autoFocus /></Labeled>
+        <Labeled label="Km included in fare"><input type="number" min="0" value={form.includedKm} onChange={set("includedKm")} className={inputCls} /></Labeled>
+        <Labeled label="Extra km rate ₹/km"><input type="number" min="0" value={form.extraKmRate} onChange={set("extraKmRate")} placeholder="vehicle tariff" className={inputCls} /></Labeled>
+        <Labeled label="Tolls & parking ₹"><input type="number" min="0" value={form.tolls} onChange={set("tolls")} className={inputCls} /></Labeled>
+        <Labeled label="Other charge ₹"><input type="number" min="0" value={form.otherAmount} onChange={set("otherAmount")} className={inputCls} /></Labeled>
+        <Labeled label="Other charge label"><input value={form.otherLabel} onChange={set("otherLabel")} placeholder="Extra hours" className={inputCls} /></Labeled>
+      </div>
+      <p className="text-[11px] text-zinc-500">
+        Extra km: <strong className="text-zinc-900 dark:text-white">{extraKm} km</strong>
+        {extraKm > 0 && Number(form.extraKmRate) > 0 && <> × ₹{form.extraKmRate} = <strong className="text-zinc-900 dark:text-white">{inr(extraKm * Number(form.extraKmRate))}</strong> + GST</>}.
+        {" "}Saving marks the booking Completed and makes the final invoice available to the customer.
+      </p>
+      <DialogActions busy={busy} error={error} onClose={onClose} onSave={save} saveLabel={c ? "Update" : "Close trip"} />
+    </Dialog>
   );
 }
 
@@ -464,13 +648,18 @@ function BookingDetail({ b }) {
     ["Vehicle", b.vehicle || b.item],
     ["Package", b.packageName],
     ["Travel date", b.toDate && b.toDate !== b.fromDate ? `${b.fromDate} → ${b.toDate}` : b.fromDate],
-    ["Pickup time", b.pickupTime],
-    ["Return drop time", b.returnTime],
+    ["Pickup time", fmtTime(b.pickupTime)],
+    ["Return drop time", fmtTime(b.returnTime)],
     ["Rental duration", rentalOf(b)],
     ["Distance", distanceText(b)],
     ["Days", Number(b.days) > 1 ? String(b.days) : ""],
     ["Passengers", b.passengers],
     ["Payment", b.paymentMethod],
+    ["Cab number", b.assignment?.cabNumber],
+    ["Cab type", b.assignment?.vehicleType],
+    ["Driver", b.assignment?.driverName || (b.driver !== "None" ? b.driver : "")],
+    ["Driver phone", b.assignment?.driverPhone],
+    ["Payment mode (driver)", b.assignment?.paymentMode],
     ["Advance", Number(b.advanceAmount) > 0 ? `${inr(b.advanceAmount)} online · ${inr(Math.round((b.fare - b.advanceAmount) * 100) / 100)} to driver` : ""],
     ["Booking status", b.status],
     ["Notes", b.notes],
@@ -493,8 +682,43 @@ function BookingDetail({ b }) {
       <div>
         <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-2">Pricing</p>
         <FareBreakdown pricing={bookingPricing(b)} compact />
+        <PostTripCharges closure={b.tripClosure} bookedTotal={Number(b.pricing?.total ?? b.fare) || 0} className="mt-3" />
+        {b.status !== "Cancelled" && (
+          <div className="flex gap-3 mt-3">
+            <InvoiceLink b={b} type="pre" label="Pre-invoice" />
+            {b.tripClosure && <InvoiceLink b={b} type="post" label="Final invoice" />}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function InvoiceLink({ b, type, label }) {
+  const [busy, setBusy] = useState(false);
+  const download = async () => {
+    setBusy(true);
+    try {
+      const blob = await downloadBookingInvoice(b.id, type);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `RoadCruise-${type === "post" ? "Final" : "Pre"}-Invoice-${b.id}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button type="button" onClick={download} disabled={busy}
+      className="inline-flex items-center gap-1 text-[11px] font-bold text-gold hover:underline disabled:opacity-60">
+      {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} {label}
+    </button>
   );
 }
 
