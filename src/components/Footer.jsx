@@ -92,22 +92,25 @@ export default function Footer() {
 
       {/* Bottom bar: brand + copyright + socials (Taxida-style logo row) */}
       <div className="max-w-7xl mx-auto px-6 border-t border-zinc-200 dark:border-white/5 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex flex-col items-center md:items-start gap-2">
-          {/* Same brand lockup as the header — it already carries the wordmark. */}
-          <Link to="/" aria-label="Road Cruise — home">
-            <img
-              src="/logo-nav.webp"
-              alt="Road Cruise — feel like cruise"
-              width="380"
-              height="165"
-              loading="lazy"
-              className="h-12 w-auto object-contain rounded-lg shadow-sm"
-            />
-          </Link>
-          <div className="text-[10px] uppercase text-gold font-bold tracking-widest">
-            ISO 9001:2015 Certified
-          </div>
-        </div>
+        {/* Brand: logo + company name, with the certification under the name. */}
+        <Link to="/" aria-label="Road Cruise — home" className="group flex items-center gap-3">
+          <img
+            src="/logo-nav.webp"
+            alt=""
+            width="380"
+            height="165"
+            loading="lazy"
+            className="h-12 w-auto object-contain rounded-lg shadow-sm"
+          />
+          <span className="flex flex-col gap-1">
+            <span className="font-serif text-lg font-bold tracking-widest text-zinc-900 dark:text-white group-hover:text-gold transition-colors">
+              ROAD CRUISE
+            </span>
+            <span className="text-[10px] uppercase text-gold font-bold tracking-widest">
+              ISO 9001:2015 Certified
+            </span>
+          </span>
+        </Link>
         <p className="text-zinc-500 dark:text-zinc-600 text-center">
           © {new Date().getFullYear()} Road Cruise. All rights reserved.
         </p>
