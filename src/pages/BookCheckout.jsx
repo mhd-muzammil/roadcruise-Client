@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Car, Check, X, ShieldCheck, Lock, CheckCircle,
-  Loader2, Users, Wallet, CreditCard, AlertCircle, Receipt, Pencil,
+  Loader2, Users, Wallet, CreditCard, AlertCircle, Receipt, Pencil, Tag, Building2,
 } from "lucide-react";
-import { createBooking } from "../utils/api";
+import { createBooking, applyCouponCode, fetchProfile } from "../utils/api";
 import { payWithCheckout } from "../utils/payment";
 import {
   tripFromSearch, tripTypeByKey, hourlyPackageByKey, distanceText, formatINR, fmtDate, fmtTime, fmtDuration,
+  withCoupon, grossOf, GSTIN_RE,
 } from "../utils/fare";
 import FareBreakdown, { RouteTimeline } from "../components/booking/FareBreakdown";
 
@@ -56,6 +57,15 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
   // Review step: the customer must see the trip + fare split-up and confirm
   // before anything is booked or charged.
   const [confirming, setConfirming] = useState(false);
+  // Coupon: the applied code's preview ({ code, type, value, discount }).
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState(null);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  // Business booking: GST details for a tax invoice (prefilled from the profile).
+  const [gstOn, setGstOn] = useState(false);
+  const [gst, setGst] = useState({ companyName: "", gstin: "", address: "" });
+  const [contactEmail, setContactEmail] = useState("");
 
   // No selection (deep link / expired session storage) -> back to the planner.
   useEffect(() => {
@@ -73,6 +83,23 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
     setNotice("");
   }, [currentUser]);
 
+  // Saved GST details + contact email come from the full profile.
+  useEffect(() => {
+    if (!currentUser) return;
+    let alive = true;
+    fetchProfile()
+      .then((u) => {
+        if (!alive) return;
+        setContactEmail(u.contactEmail || "");
+        if (u.billing?.gstin) {
+          setGst({ companyName: u.billing.companyName || "", gstin: u.billing.gstin, address: u.billing.address || "" });
+          setGstOn(true);
+        }
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [currentUser]);
+
   if (!sel) return null;
 
   const { search, route, days, vehicle, quote } = sel;
@@ -81,7 +108,8 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
   const stops = search.stops || [];
   // Server-priced total (incl. GST). The deposit shown here mirrors the
   // server's rule; the server computes the amount actually charged.
-  const fare = quote.pricing.total;
+  const pricing = withCoupon(quote.pricing, coupon);
+  const fare = pricing.total;
   const advanceRate = Number(sel.advanceRate) || 0.2;
   const advancePct = Math.round(advanceRate * 100);
   const advance = Math.max(1, Math.round(fare * advanceRate));
@@ -99,6 +127,10 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.phone.trim()) e.phone = "Phone number is required";
     else if (!/^\+?[0-9\s-]{10,14}$/.test(form.phone.trim())) e.phone = "Enter a valid phone number";
+    if (gstOn) {
+      if (!gst.companyName.trim()) e.companyName = "Enter the registered company name";
+      if (!GSTIN_RE.test(gst.gstin.trim().toUpperCase())) e.gstin = "Enter a valid 15-character GSTIN";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -113,7 +145,30 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
     notes: form.notes.trim(),
     paymentMode: plan === "arrival" ? "arrival" : "online",
     paymentPlan: plan === "advance" ? "advance" : "full",
+    couponCode: coupon?.code || "",
+    billing: gstOn ? { ...gst, gstin: gst.gstin.trim().toUpperCase() } : null,
   });
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    if (!currentUser) {
+      setCouponMsg("Please sign in to use a coupon.");
+      onAuthClick?.();
+      return;
+    }
+    setCouponBusy(true);
+    setCouponMsg("");
+    try {
+      setCoupon(await applyCouponCode(code, grossOf(quote.pricing)));
+    } catch (err) {
+      setCoupon(null);
+      setCouponMsg(err.message);
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+  const removeCoupon = () => { setCoupon(null); setCouponInput(""); setCouponMsg(""); };
 
   const handleError = (err) => {
     if (err?.status === 401) {
@@ -328,12 +383,15 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
                 Email ID
               </label>
               <input
-                id="co-email" type="email" value={currentUser?.email || ""} disabled
+                id="co-email" type="email" disabled
+                value={/@phone\.invalid$/.test(currentUser?.email || "") ? contactEmail : currentUser?.email || ""}
                 placeholder="Sign in to attach your email"
                 className={`${inputCls(false)} opacity-70 cursor-not-allowed`}
               />
               <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
-                {currentUser
+                {currentUser && /@phone\.invalid$/.test(currentUser.email || "") && !contactEmail
+                  ? <>Add an email in <Link to="/profile" className="text-gold hover:underline">your profile</Link> to get the invoice by email.</>
+                  : currentUser
                   ? "Booking confirmation and invoice go to this email."
                   : "You'll sign in before payment — the booking is linked to your account email."}
               </p>
@@ -348,12 +406,97 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
             </div>
           </div>
 
+          {/* Business booking: GST invoice details */}
+          <div className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-xl shadow-black/5">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox" checked={gstOn}
+                onChange={(e) => { setGstOn(e.target.checked); setErrors((p) => ({ ...p, companyName: "", gstin: "" })); }}
+                className="w-4 h-4 accent-[#d4af37]"
+              />
+              <Building2 className="w-4 h-4 text-gold" />
+              <span className="text-sm font-semibold text-zinc-900 dark:text-white">I need a GST invoice (business booking)</span>
+            </label>
+            {gstOn && (
+              <div className="grid md:grid-cols-2 gap-4 mt-4 animate-fade-in">
+                <div>
+                  <label htmlFor="co-company" className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                    Company Name <span className="text-gold">*</span>
+                  </label>
+                  <input
+                    id="co-company" value={gst.companyName} placeholder="Registered company name"
+                    onChange={(e) => setGst((g) => ({ ...g, companyName: e.target.value }))}
+                    className={inputCls(errors.companyName)}
+                  />
+                  {errors.companyName && <p className="text-red-500 text-xs mt-1">{errors.companyName}</p>}
+                </div>
+                <div>
+                  <label htmlFor="co-gstin" className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                    GSTIN <span className="text-gold">*</span>
+                  </label>
+                  <input
+                    id="co-gstin" value={gst.gstin} maxLength={15} placeholder="e.g. 33ABCDE1234F1Z5"
+                    onChange={(e) => setGst((g) => ({ ...g, gstin: e.target.value.toUpperCase().replace(/\s/g, "") }))}
+                    className={`${inputCls(errors.gstin)} uppercase tracking-wider`}
+                  />
+                  {errors.gstin && <p className="text-red-500 text-xs mt-1">{errors.gstin}</p>}
+                </div>
+                <div className="md:col-span-2">
+                  <label htmlFor="co-address" className="block text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                    Billing Address
+                  </label>
+                  <textarea
+                    id="co-address" rows={2} value={gst.address} placeholder="Registered address (as on the GST certificate)"
+                    onChange={(e) => setGst((g) => ({ ...g, address: e.target.value }))}
+                    className={`${inputCls(false)} resize-none`}
+                  />
+                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Printed on your invoice and saved to your profile for next time.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Fare summary — the server's itemised breakdown */}
           <div className="bg-white dark:bg-bg-card border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-xl shadow-black/5">
             <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white mb-3">
               <Receipt className="w-4 h-4 text-gold" /> Fare Summary
             </h2>
-            <FareBreakdown pricing={quote.pricing} />
+            <FareBreakdown pricing={pricing} />
+
+            <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/5">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+                  <span className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300 min-w-0">
+                    <Tag className="w-4 h-4 shrink-0" />
+                    <span className="truncate"><strong>{coupon.code}</strong> applied — you save ₹ {formatINR(coupon.discount)}</span>
+                  </span>
+                  <button type="button" onClick={removeCoupon} className="text-xs font-bold text-zinc-500 hover:text-red-500 uppercase tracking-wider shrink-0">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={couponInput} placeholder="Have a coupon code?" aria-label="Coupon code"
+                      onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponMsg(""); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } }}
+                      className={`${inputCls(!!couponMsg)} pl-9 uppercase tracking-wider`}
+                    />
+                  </div>
+                  <button
+                    type="button" onClick={applyCoupon} disabled={couponBusy || !couponInput.trim()}
+                    className="px-5 rounded-xl border border-gold/50 text-gold hover:bg-gold hover:text-zinc-950 disabled:opacity-50 font-bold text-xs uppercase tracking-wider transition-all"
+                  >
+                    {couponBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                  </button>
+                </div>
+              )}
+              {couponMsg && <p className="text-red-500 text-xs mt-1.5">{couponMsg}</p>}
+            </div>
           </div>
 
           {/* Inclusions / Exclusions — both visible, nothing hidden behind a tab */}
@@ -457,6 +600,8 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
           route={route}
           vehicle={vehicle}
           quote={quote}
+          pricing={pricing}
+          billing={gstOn ? gst : null}
           plan={plan}
           payNow={payNow}
           balance={plan === "advance" ? balance : plan === "arrival" ? fare : 0}
@@ -473,7 +618,7 @@ export default function BookCheckout({ currentUser, onAuthClick, onSessionExpire
  * until the customer presses Confirm.
  */
 function ConfirmTripDialog({
-  onCancel, onConfirm, traveller, search, stops, trip, pkg, days, route, vehicle, quote,
+  onCancel, onConfirm, traveller, search, stops, trip, pkg, days, route, vehicle, quote, pricing, billing,
   plan, payNow, balance, advancePct,
 }) {
   useEffect(() => {
@@ -525,6 +670,12 @@ function ConfirmTripDialog({
               <DetailRow label="Phone" value={traveller.phone} />
             </div>
             {traveller.notes.trim() && <DetailRow label="Additional request" value={traveller.notes.trim()} />}
+            {billing && (
+              <div className="rounded-xl border border-zinc-200 dark:border-white/10 p-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                <DetailRow label="GST invoice to" value={billing.companyName} />
+                <DetailRow label="GSTIN" value={billing.gstin.toUpperCase()} />
+              </div>
+            )}
           </div>
 
           {/* Fare split-up */}
@@ -532,7 +683,7 @@ function ConfirmTripDialog({
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
               <Receipt className="w-4 h-4 text-gold" /> Fare split-up
             </p>
-            <FareBreakdown pricing={quote.pricing} compact />
+            <FareBreakdown pricing={pricing} compact />
             <div className="rounded-xl bg-gold/10 border border-gold/30 p-3 space-y-1.5 text-sm">
               <div className="flex justify-between gap-3">
                 <span className="text-zinc-600 dark:text-zinc-300">Payment</span>

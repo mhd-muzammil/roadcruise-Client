@@ -5,12 +5,13 @@ import {
   Car, ClipboardList, DollarSign, Plus, ShieldAlert, Trash2, Check, X,
   Users, Image as ImageIcon, Film, Upload, Unlock, Loader2, LayoutGrid,
   Megaphone, Download, Send, Eye, EyeOff, Clock, Package as PackageIcon, Pencil, Search, ChevronDown,
-  UserCheck, Flag,
+  UserCheck, Flag, Tag,
 } from "lucide-react";
 import FareBreakdown, { RouteTimeline, PostTripCharges } from "./booking/FareBreakdown";
 import { bookingPricing, distanceText, formatINR, fmtTime } from "../utils/fare";
 import {
-  fetchBookings, updateBooking, deleteBooking, closeTrip, downloadBookingInvoice,
+  fetchBookings, updateBooking, deleteBooking, closeTrip, downloadBookingInvoice, editBookingInvoice,
+  getCoupons, createCoupon, updateCoupon, deleteCoupon,
   getAdminVehicles, createVehicle, updateVehicle, deleteVehicle, uploadVehicleMedia, releaseVehicleHold,
   getGallery, uploadGalleryMedia, deleteGalleryItem, mediaUrl,
   getAdminPromos, createPromo, updatePromo, deletePromo, announcePromo, downloadConsentFile, consentSummary,
@@ -24,6 +25,7 @@ const TABS = [
   { id: "gallery", label: "Gallery", icon: ImageIcon },
   { id: "packages", label: "Packages", icon: PackageIcon },
   { id: "promos", label: "Promotions", icon: Megaphone },
+  { id: "coupons", label: "Coupons", icon: Tag },
 ];
 
 const CATEGORIES = ["Sedans", "SUVs", "Tempo Travellers", "Mini Buses", "Luxury", "Other"];
@@ -61,6 +63,7 @@ export default function AdminPanel({ currentUser }) {
   const [gallery, setGallery] = useState([]);
   const [promos, setPromos] = useState([]);
   const [packages, setPackages] = useState([]);
+  const [coupons, setCoupons] = useState([]);
   const [error, setError] = useState("");
 
   const isAdmin = currentUser && currentUser.role === "admin";
@@ -80,6 +83,9 @@ export default function AdminPanel({ currentUser }) {
   const loadPackages = useCallback(async () => {
     try { setPackages(await getAdminPackages()); } catch (e) { console.error(e); }
   }, []);
+  const loadCoupons = useCallback(async () => {
+    try { setCoupons(await getCoupons()); } catch (e) { console.error(e); }
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -88,7 +94,8 @@ export default function AdminPanel({ currentUser }) {
     loadGallery();
     loadPromos();
     loadPackages();
-  }, [isAdmin, loadBookings, loadVehicles, loadGallery, loadPromos, loadPackages]);
+    loadCoupons();
+  }, [isAdmin, loadBookings, loadVehicles, loadGallery, loadPromos, loadPackages, loadCoupons]);
 
   // --- Authorization gate: admin role only. No bypass, no test credentials. ---
   if (!isAdmin) {
@@ -182,6 +189,9 @@ export default function AdminPanel({ currentUser }) {
         {activeTab === "promos" && (
           <PromosTab promos={promos} reload={loadPromos} />
         )}
+        {activeTab === "coupons" && (
+          <CouponsTab coupons={coupons} reload={loadCoupons} />
+        )}
       </div>
     </div>
   );
@@ -268,6 +278,7 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
   const [openId, setOpenId] = useState(null);
   const [assigning, setAssigning] = useState(null); // booking being assigned a cab/driver
   const [closing, setClosing] = useState(null);     // booking whose trip is being closed
+  const [invoicing, setInvoicing] = useState(null); // booking whose invoice is being edited
 
   const exportXlsx = async () => {
     setExporting(true);
@@ -458,7 +469,7 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
                     {open && (
                       <tr className="bg-zinc-50/70 dark:bg-zinc-950/30">
                         <td colSpan="11" className="p-0">
-                          <BookingDetail b={b} />
+                          <BookingDetail b={b} onEditInvoice={() => setInvoicing(b)} />
                         </td>
                       </tr>
                     )}
@@ -482,6 +493,13 @@ function BookingsTab({ bookings, reload, reloadVehicles }) {
           booking={closing}
           onClose={() => setClosing(null)}
           onSaved={async () => { setClosing(null); await reload(); await reloadVehicles(); }}
+        />
+      )}
+      {invoicing && (
+        <EditInvoiceDialog
+          booking={invoicing}
+          onClose={() => setInvoicing(null)}
+          onSaved={async () => { setInvoicing(null); await reload(); }}
         />
       )}
     </div>
@@ -601,6 +619,7 @@ function CloseTripDialog({ booking, onClose, onSaved }) {
     otherAmount: c?.lines?.find((l) => l.key === "other")?.amount ?? "",
     otherLabel: c?.lines?.find((l) => l.key === "other")?.label ?? "",
     tolls: c?.tolls || "",
+    paymentMode: c?.paymentMode || booking.assignment?.paymentMode || "Cash",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -627,6 +646,11 @@ function CloseTripDialog({ booking, onClose, onSaved }) {
         <Labeled label="Other charge ₹"><input type="number" min="0" value={form.otherAmount} onChange={set("otherAmount")} className={inputCls} /></Labeled>
         <Labeled label="Other charge label"><input value={form.otherLabel} onChange={set("otherLabel")} placeholder="Extra hours" className={inputCls} /></Labeled>
       </div>
+      <Labeled label="Mode of payment (final bill)">
+        <select value={form.paymentMode} onChange={set("paymentMode")} className={inputCls}>
+          {PAYMENT_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+      </Labeled>
       <p className="text-[11px] text-zinc-500">
         Extra km: <strong className="text-zinc-900 dark:text-white">{extraKm} km</strong>
         {extraKm > 0 && Number(form.extraKmRate) > 0 && <> × ₹{form.extraKmRate} = <strong className="text-zinc-900 dark:text-white">{inr(extraKm * Number(form.extraKmRate))}</strong> + GST</>}.
@@ -638,7 +662,7 @@ function CloseTripDialog({ booking, onClose, onSaved }) {
 }
 
 /** Everything about one booking on a single panel (expanded log row). */
-function BookingDetail({ b }) {
+function BookingDetail({ b, onEditInvoice }) {
   const facts = [
     ["Customer", b.name],
     ["Phone", b.phone],
@@ -660,6 +684,10 @@ function BookingDetail({ b }) {
     ["Driver", b.assignment?.driverName || (b.driver !== "None" ? b.driver : "")],
     ["Driver phone", b.assignment?.driverPhone],
     ["Payment mode (driver)", b.assignment?.paymentMode],
+    ["Final bill paid via", b.tripClosure?.paymentMode],
+    ["Company", b.invoiceEdits?.companyName || b.billing?.companyName],
+    ["GSTIN", b.invoiceEdits?.gstin || b.billing?.gstin],
+    ["Coupon", b.pricing?.coupon?.code ? `${b.pricing.coupon.code} (−${inr(b.pricing.discount)})` : ""],
     ["Advance", Number(b.advanceAmount) > 0 ? `${inr(b.advanceAmount)} online · ${inr(Math.round((b.fare - b.advanceAmount) * 100) / 100)} to driver` : ""],
     ["Booking status", b.status],
     ["Notes", b.notes],
@@ -683,12 +711,17 @@ function BookingDetail({ b }) {
         <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 mb-2">Pricing</p>
         <FareBreakdown pricing={bookingPricing(b)} compact />
         <PostTripCharges closure={b.tripClosure} bookedTotal={Number(b.pricing?.total ?? b.fare) || 0} className="mt-3" />
-        {b.status !== "Cancelled" && (
-          <div className="flex gap-3 mt-3">
+        {b.status !== "Cancelled" && (<>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
             <InvoiceLink b={b} type="pre" label="Pre-invoice" />
             {b.tripClosure && <InvoiceLink b={b} type="post" label="Final invoice" />}
+            <button type="button" onClick={onEditInvoice}
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-gold hover:underline">
+              <Pencil className="w-3 h-3" /> Edit invoice
+            </button>
           </div>
-        )}
+          {b.invoiceEdits && <p className="text-[10px] text-zinc-400 mt-1">Invoice details edited by admin.</p>}
+        </>)}
       </div>
     </div>
   );
@@ -719,6 +752,205 @@ function InvoiceLink({ b, type, label }) {
       className="inline-flex items-center gap-1 text-[11px] font-bold text-gold hover:underline disabled:opacity-60">
       {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} {label}
     </button>
+  );
+}
+
+/**
+ * Hand-edit what the invoices print. Blank fields show the generated value
+ * (placeholders). Amounts aren't editable: they always match the booking's
+ * pricing, coupon and trip closure.
+ */
+function EditInvoiceDialog({ booking, onClose, onSaved }) {
+  const e0 = booking.invoiceEdits || {};
+  const billing = booking.billing || {};
+  const FIELDS = [
+    "invoiceNumber", "invoiceDate", "finalInvoiceNumber", "finalInvoiceDate",
+    "name", "phone", "email", "companyName", "gstin", "address", "note",
+  ];
+  const [form, setForm] = useState(Object.fromEntries(FIELDS.map((k) => [k, e0[k] || ""])));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: k === "gstin" ? e.target.value.toUpperCase() : e.target.value }));
+  const placeholderEmail = booking.contactEmail || (/@phone\.invalid$/.test(booking.customerEmail || "") ? "" : booking.customerEmail);
+
+  const save = async (data) => {
+    setError("");
+    setBusy(true);
+    try { await editBookingInvoice(booking.id, data); await onSaved(); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <Dialog title="Edit invoice" subtitle={`${booking.id} · leave a field blank to use the default`} onClose={onClose} busy={busy}>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Invoice</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Labeled label="Pre-invoice no."><input value={form.invoiceNumber} onChange={set("invoiceNumber")} placeholder={`RC-INV-${booking.id}`} className={inputCls} /></Labeled>
+        <Labeled label="Pre-invoice date"><input type="date" value={form.invoiceDate} onChange={set("invoiceDate")} className={inputCls} /></Labeled>
+        <Labeled label="Final invoice no."><input value={form.finalInvoiceNumber} onChange={set("finalInvoiceNumber")} placeholder={`${form.invoiceNumber || `RC-INV-${booking.id}`}-F`} className={inputCls} /></Labeled>
+        <Labeled label="Final invoice date"><input type="date" value={form.finalInvoiceDate} onChange={set("finalInvoiceDate")} className={inputCls} /></Labeled>
+      </div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 pt-1">Billed to</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Labeled label="Company name"><input value={form.companyName} onChange={set("companyName")} placeholder={billing.companyName || "—"} className={inputCls} /></Labeled>
+        <Labeled label="GSTIN"><input value={form.gstin} onChange={set("gstin")} maxLength={15} placeholder={billing.gstin || "—"} className={`${inputCls} uppercase`} /></Labeled>
+        <Labeled label="Name / contact"><input value={form.name} onChange={set("name")} placeholder={booking.name || ""} className={inputCls} /></Labeled>
+        <Labeled label="Phone"><input value={form.phone} onChange={set("phone")} placeholder={booking.phone || ""} className={inputCls} /></Labeled>
+      </div>
+      <Labeled label="Email"><input type="email" value={form.email} onChange={set("email")} placeholder={placeholderEmail || "—"} className={inputCls} /></Labeled>
+      <Labeled label="Billing address"><textarea rows={2} value={form.address} onChange={set("address")} placeholder={billing.address || "—"} className={`${inputCls} resize-none`} /></Labeled>
+      <Labeled label="Note on invoice"><input value={form.note} onChange={set("note")} placeholder="e.g. PO number, cost centre" className={inputCls} /></Labeled>
+      <p className="text-[10px] text-zinc-400">Amounts come from the booking, coupon and trip closure and can't be edited here.</p>
+      <DialogActions
+        busy={busy} error={error} onClose={onClose} onSave={() => save(form)} saveLabel="Save invoice"
+        extra={booking.invoiceEdits && (
+          <button type="button" onClick={() => save(Object.fromEntries(FIELDS.map((k) => [k, ""])))} disabled={busy}
+            className="text-[11px] font-bold text-red-500 hover:underline">Reset all</button>
+        )}
+      />
+    </Dialog>
+  );
+}
+
+// ============================================================================
+//  Coupons
+// ============================================================================
+const EMPTY_COUPON = {
+  code: "", description: "", type: "percent", value: "", maxDiscount: "", minAmount: "",
+  validFrom: "", validUntil: "", usageLimit: "", onePerCustomer: true, active: true,
+};
+
+function couponSummary(c) {
+  const off = c.type === "percent" ? `${c.value}% off${c.maxDiscount ? ` (max ${inr(c.maxDiscount)})` : ""}` : `${inr(c.value)} off`;
+  return [off, c.minAmount ? `min fare ${inr(c.minAmount)}` : ""].filter(Boolean).join(" · ");
+}
+
+function CouponsTab({ coupons, reload }) {
+  const [form, setForm] = useState(EMPTY_COUPON);
+  const [editingId, setEditingId] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k) => (e) => {
+    const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setForm((f) => ({ ...f, [k]: k === "code" ? String(v).toUpperCase().replace(/\s/g, "") : v }));
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      if (editingId) await updateCoupon(editingId, form);
+      else await createCoupon(form);
+      setForm(EMPTY_COUPON);
+      setEditingId(null);
+      await reload();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const edit = (c) => {
+    setEditingId(c.id);
+    setError("");
+    setForm({
+      code: c.code, description: c.description, type: c.type, value: c.value,
+      maxDiscount: c.maxDiscount ?? "", minAmount: c.minAmount ?? "", validFrom: c.validFrom, validUntil: c.validUntil,
+      usageLimit: c.usageLimit ?? "", onePerCustomer: c.onePerCustomer, active: c.active,
+    });
+  };
+  const toggle = async (c) => { try { await updateCoupon(c.id, { active: !c.active }); await reload(); } catch (e) { alert(e.message); } };
+  const remove = async (c) => {
+    if (!confirm(`Delete coupon ${c.code}?`)) return;
+    try { await deleteCoupon(c.id); await reload(); } catch (e) { alert(e.message); }
+  };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const statusOf = (c) =>
+    !c.active ? ["Off", "bg-zinc-500/10 text-zinc-500"]
+      : c.validUntil && c.validUntil < today ? ["Expired", "bg-red-500/10 text-red-500"]
+        : c.usageLimit && c.usedCount >= c.usageLimit ? ["Used up", "bg-amber-500/10 text-amber-600"]
+          : c.validFrom && c.validFrom > today ? ["Scheduled", "bg-blue-500/10 text-blue-500"]
+            : ["Live", "bg-emerald-500/10 text-emerald-600"];
+
+  return (
+    <div className="grid lg:grid-cols-[360px_1fr] gap-6 items-start animate-fade-in">
+      <form onSubmit={submit} className="p-5 rounded-2xl border border-zinc-200 dark:border-white/5 bg-white/60 dark:bg-zinc-900/20 space-y-3">
+        <h3 className="text-sm font-bold font-serif">{editingId ? `Edit ${form.code}` : "New coupon"}</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Labeled label="Code *"><input required value={form.code} onChange={set("code")} placeholder="WELCOME10" maxLength={20} className={`${inputCls} uppercase tracking-wider`} /></Labeled>
+          <Labeled label="Discount type">
+            <select value={form.type} onChange={set("type")} className={inputCls}>
+              <option value="percent">Percent (%)</option>
+              <option value="flat">Flat (₹)</option>
+            </select>
+          </Labeled>
+          <Labeled label={form.type === "percent" ? "Discount % *" : "Discount ₹ *"}>
+            <input required type="number" min="1" max={form.type === "percent" ? 100 : undefined} value={form.value} onChange={set("value")} className={inputCls} />
+          </Labeled>
+          {form.type === "percent" ? (
+            <Labeled label="Max discount ₹"><input type="number" min="0" value={form.maxDiscount} onChange={set("maxDiscount")} placeholder="No cap" className={inputCls} /></Labeled>
+          ) : <div />}
+          <Labeled label="Min fare ₹ (before GST)"><input type="number" min="0" value={form.minAmount} onChange={set("minAmount")} placeholder="None" className={inputCls} /></Labeled>
+          <Labeled label="Total uses"><input type="number" min="0" value={form.usageLimit} onChange={set("usageLimit")} placeholder="Unlimited" className={inputCls} /></Labeled>
+          <Labeled label="Valid from"><input type="date" value={form.validFrom} onChange={set("validFrom")} className={inputCls} /></Labeled>
+          <Labeled label="Valid until"><input type="date" value={form.validUntil} onChange={set("validUntil")} className={inputCls} /></Labeled>
+        </div>
+        <Labeled label="Description (internal)"><input value={form.description} onChange={set("description")} placeholder="e.g. Diwali offer" className={inputCls} /></Labeled>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={form.onePerCustomer} onChange={set("onePerCustomer")} /> Once per customer</label>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={form.active} onChange={set("active")} /> Active</label>
+        {error && <p className="text-xs text-red-500 bg-red-500/10 border border-red-500/30 rounded-lg p-2">{error}</p>}
+        <div className="flex gap-2">
+          <button type="submit" disabled={busy} className="flex-1 py-2.5 text-xs font-bold rounded-lg bg-gold hover:bg-gold-hover text-zinc-950 flex items-center justify-center gap-1.5 disabled:opacity-60">
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : editingId ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {editingId ? "Save changes" : "Create coupon"}
+          </button>
+          {editingId && (
+            <button type="button" onClick={() => { setEditingId(null); setForm(EMPTY_COUPON); setError(""); }}
+              className="px-4 py-2.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-white/10">Cancel</button>
+          )}
+        </div>
+        <p className="text-[10px] text-zinc-400 leading-relaxed">
+          Customers enter the code at checkout. The discount comes off the fare before GST; cancelling a booking gives the use back.
+        </p>
+      </form>
+
+      <div className="space-y-3">
+        <h3 className="text-base font-bold font-serif">Coupons ({coupons.length})</h3>
+        {coupons.length === 0 && (
+          <p className="text-xs text-zinc-500 p-6 rounded-2xl border border-dashed border-zinc-300 dark:border-white/10 text-center">No coupons yet — create one on the left.</p>
+        )}
+        {coupons.map((c) => {
+          const [label, cls] = statusOf(c);
+          return (
+            <div key={c.id} className="p-4 rounded-2xl border border-zinc-200 dark:border-white/5 bg-white/60 dark:bg-zinc-900/20 flex items-center gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono font-bold text-sm tracking-wider text-gold">{c.code}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
+                  {c.onePerCustomer && <span className="text-[10px] text-zinc-400">once per customer</span>}
+                </div>
+                <p className="text-xs text-zinc-700 dark:text-zinc-200 mt-1">{couponSummary(c)}</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Used {c.usedCount}{c.usageLimit ? ` / ${c.usageLimit}` : ""} times
+                  {(c.validFrom || c.validUntil) && ` · ${c.validFrom || "now"} → ${c.validUntil || "no end"}`}
+                  {c.description && ` · ${c.description}`}
+                </p>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button onClick={() => toggle(c)} title={c.active ? "Turn off" : "Turn on"} className="p-1.5 rounded hover:bg-gold/10 text-zinc-500 hover:text-gold">
+                  {c.active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <button onClick={() => edit(c)} title="Edit" className="p-1.5 rounded hover:bg-gold/10 text-zinc-500 hover:text-gold"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => remove(c)} title="Delete" className="p-1.5 rounded hover:bg-red-500/10 text-red-500"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

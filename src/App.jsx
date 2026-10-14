@@ -38,6 +38,7 @@ const BookResults = lazy(() => import("./pages/BookResults"));
 const BookCheckout = lazy(() => import("./pages/BookCheckout"));
 const BecomeOperator = lazy(() => import("./pages/BecomeOperator"));
 const Business = lazy(() => import("./pages/Business"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 export default function App() {
   // Router must wrap the tree so AppContent can use navigation hooks.
@@ -94,6 +95,15 @@ function AppContent() {
     }
   };
 
+  // Profile edits (name etc.) update the stored user, keeping its tokens.
+  const handleProfileUpdate = (fields) => {
+    setCurrentUser((u) => {
+      const next = { ...u, ...fields };
+      localStorage.setItem("rc_user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem("rc_user");
@@ -146,6 +156,17 @@ function AppContent() {
                 currentUser={currentUser}
                 onAuthClick={() => setIsAuthOpen(true)}
                 onSessionExpired={handleLogout}
+              />
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Profile
+                currentUser={currentUser}
+                onAuthClick={() => setIsAuthOpen(true)}
+                onSessionExpired={handleLogout}
+                onProfileUpdate={handleProfileUpdate}
               />
             }
           />

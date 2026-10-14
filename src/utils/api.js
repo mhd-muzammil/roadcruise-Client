@@ -335,6 +335,86 @@ export const closeTrip = async (id, data) => {
   return res.json();
 };
 
+/**
+ * Admin: hand-edit what a booking's invoices print — invoice numbers/dates,
+ * billed-to name/contact/company/GSTIN/address and a note. An empty value
+ * restores the generated default.
+ */
+export const editBookingInvoice = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/bookings/${id}/invoice`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return throwError(res, "Could not save the invoice details");
+  return res.json();
+};
+
+// --- Coupons ---
+
+/** Checkout preview: the discount a code gives on the pre-GST subtotal. */
+export const applyCouponCode = async (code, amount) => {
+  const res = await fetch(`${BASE_URL}/coupons/apply`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ code, amount })
+  });
+  if (!res.ok) return throwError(res, "Could not apply the coupon");
+  return res.json();
+};
+
+export const getCoupons = async () => {
+  const res = await fetch(`${BASE_URL}/coupons`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not load coupons");
+  return res.json();
+};
+
+export const createCoupon = async (data) => {
+  const res = await fetch(`${BASE_URL}/coupons`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return throwError(res, "Could not create the coupon");
+  return res.json();
+};
+
+export const updateCoupon = async (id, data) => {
+  const res = await fetch(`${BASE_URL}/coupons/${id}`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return throwError(res, "Could not update the coupon");
+  return res.json();
+};
+
+export const deleteCoupon = async (id) => {
+  const res = await fetch(`${BASE_URL}/coupons/${id}`, { method: "DELETE", headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not delete the coupon");
+  return res.json();
+};
+
+// --- Profile ---
+
+/** The signed-in user's full profile (GET /auth/me). */
+export const fetchProfile = async () => {
+  const res = await fetch(`${BASE_URL}/auth/me`, { headers: authHeaders() });
+  if (!res.ok) return throwError(res, "Could not load your profile");
+  return res.json();
+};
+
+/** data: { name?, contactEmail?, billing?: { companyName, gstin, address } | null } */
+export const updateProfile = async (data) => {
+  const res = await fetch(`${BASE_URL}/auth/profile`, {
+    method: "PATCH",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return throwError(res, "Could not save your profile");
+  return res.json();
+};
+
 // --- Contact / enquiry (public — no auth) ---
 
 /**

@@ -189,3 +189,34 @@ export const fmtDuration = (mins) => {
   const m = Math.max(0, Math.round(Number(mins) || 0));
   return `${Math.floor(m / 60)} hr${Math.floor(m / 60) === 1 ? "" : "s"} ${m % 60} min`;
 };
+
+/**
+ * Preview a coupon on a server quote: the discount comes off the pre-GST
+ * subtotal and GST is recomputed — the same rule the server applies when the
+ * booking is created (the server's figure is the one charged).
+ * applied: { code, type, value, discount } from POST /coupons/apply.
+ */
+export function withCoupon(pricing, applied) {
+  if (!pricing || !applied?.discount) return pricing;
+  const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+  const gross = r2(pricing.lines.reduce((s, l) => s + Number(l.amount || 0), 0));
+  const subtotal = r2(gross - Math.min(gross, applied.discount));
+  const gstRate = Number(pricing.gstRate) || 0;
+  const gstAmount = r2((subtotal * gstRate) / 100);
+  return {
+    ...pricing,
+    grossSubtotal: gross,
+    discount: r2(gross - subtotal),
+    coupon: { code: applied.code, type: applied.type, value: applied.value },
+    subtotal,
+    gstAmount,
+    total: r2(subtotal + gstAmount),
+  };
+}
+
+/** Pre-GST subtotal of a quote (what coupon minimums are measured against). */
+export const grossOf = (pricing) =>
+  Math.round((pricing?.lines || []).reduce((s, l) => s + Number(l.amount || 0), 0) * 100) / 100;
+
+// 15-char GSTIN: state code, PAN, entity no., "Z", check character.
+export const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;

@@ -25,6 +25,12 @@ export default function FareBreakdown({ pricing, compact = false, className = ""
         ))}
       </ul>
       <div className="mt-2 pt-2 border-t border-dashed border-zinc-200 dark:border-white/10 space-y-1">
+        {Number(pricing.discount) > 0 && (
+          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+            <span>Coupon {pricing.coupon?.code ? `(${pricing.coupon.code})` : "discount"}</span>
+            <span className="tabular-nums">− ₹ {formatINR(pricing.discount)}</span>
+          </div>
+        )}
         {hasGst && (
           <>
             <div className="flex justify-between text-zinc-600 dark:text-zinc-300">

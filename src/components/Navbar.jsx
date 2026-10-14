@@ -5,6 +5,11 @@ import { Link, NavLink } from "react-router-dom";
 // onPlanTrip — opens the trip-type dialog (Airport / One-Way / Round-Trip /
 // Hourly), which is what "Book Now" in the header now does. The old free-form
 // enquiry modal is still reachable from inside that dialog.
+// A phone-login account's identity is a synthetic "<number>@phone.invalid"
+// address; show the number instead.
+const accountLabel = (u) =>
+  /@phone\.invalid$/.test(u?.email || "") ? `+91 ${u.phone || u.email.split("@")[0]}` : u?.email;
+
 export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -104,8 +109,15 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
                 >
                   <div className="px-3 py-1.5 border-b border-zinc-150 dark:border-white/5 mb-1">
                     <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-wider">Account</p>
-                    <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{currentUser.email}</p>
+                    <p className="text-xs text-zinc-700 dark:text-zinc-200 truncate mt-0.5">{accountLabel(currentUser)}</p>
                   </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="w-full block text-left px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-gold/10 hover:text-gold rounded-lg transition-colors"
+                  >
+                    My Profile
+                  </Link>
                   <Link
                     to="/my-bookings"
                     onClick={() => setUserMenuOpen(false)}
@@ -223,7 +235,7 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
                   </div>
                   <div>
                     <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{currentUser.name}</p>
-                    <p className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate max-w-[120px]">{currentUser.email}</p>
+                    <p className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate max-w-[120px]">{accountLabel(currentUser)}</p>
                   </div>
                 </div>
                 <button
@@ -236,13 +248,22 @@ export default function Navbar({ onPlanTrip, currentUser, onAuthClick, onLogout 
                   Logout
                 </button>
               </div>
-              <Link
-                to="/my-bookings"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full block text-center py-2 bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 rounded-xl text-xs font-bold hover:border-gold hover:text-gold transition-all uppercase tracking-wider"
-              >
-                My Bookings
-              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full block text-center py-2 bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 rounded-xl text-xs font-bold hover:border-gold hover:text-gold transition-all uppercase tracking-wider"
+                >
+                  My Profile
+                </Link>
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full block text-center py-2 bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 rounded-xl text-xs font-bold hover:border-gold hover:text-gold transition-all uppercase tracking-wider"
+                >
+                  My Bookings
+                </Link>
+              </div>
               {(currentUser.role === "admin" || currentUser.email === "admin@roadcruise.com") && (
                 <Link
                   to="/admin"
